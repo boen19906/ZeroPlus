@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
 import { auth } from '../firebase';
 
@@ -7,9 +7,11 @@ interface NavBarProps {
 }
 
 const NavBar = ({ user }: NavBarProps) => {
+  const navigate = useNavigate();
   const handleSignOut = async () => {
     try {
       await auth.signOut();
+      navigate("/")
     } catch (error) {
       console.error('Error signing out:', error);
     }

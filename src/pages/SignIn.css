@@ -1,6 +1,9 @@
 .signup-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     max-width: 400px;
-    margin: 2rem auto;
     padding: 2rem;
     background-color: #fff;
     border-radius: 8px;
@@ -14,6 +17,8 @@
 }
 
 .form-group {
+    display: flex;
+    flex-direction: column;
     margin-bottom: 1.25rem;
 }
 

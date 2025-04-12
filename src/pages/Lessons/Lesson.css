@@ -1,0 +1,66 @@
+.lesson-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .nav-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .questions ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1rem;
+  }
+  
+  .questions ul li {
+    background-color: #f0f0f0;
+    padding: 1rem;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: border-color 0.2s, background-color 0.2s, color 0.2s;
+    cursor: pointer;
+  }
+  
+  .questions ul li:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .questions ul li.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+  }
+
+  .questions ul li.correct {
+    background-color: #28a745;
+    border-color: #fff;
+  }
+
+  .questions ul li.incorrect {
+    background-color: #dc3545;
+    border-color: #c82333;
+    color: #fff;
+  }
+
+  .quiz-results {
+    margin-top: 2rem;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+
+  .quiz-results span {
+    font-weight: bold;
+    color: #28a745;
+  }
+  
+  

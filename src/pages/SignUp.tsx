@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
+import { db, auth } from "../firebase";
+import { setDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import './SignIn.css'; // Reuse the same CSS
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
     email: '',
+    phoneNumber: '',
     password: '',
     confirmPassword: '',
   });
@@ -41,6 +43,11 @@ const SignUp = () => {
       return;
     }
 
+    if (formData.phoneNumber.length !== 10) {
+      setError("Input a valid phone number");
+      return;
+    }
+
     try {
       // Create the user with Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
@@ -49,6 +56,12 @@ const SignUp = () => {
         formData.password
       );
       const user = userCredential.user;
+
+      // Add user data to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+      });
 
       // Redirect to home page
       navigate("/");
@@ -88,6 +101,17 @@ const SignUp = () => {
             id="email"
             name="email"
             value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label htmlFor="phoneNumber">Phone Number:</label>
+          <input
+            type="number"
+            id="phoneNumber"
+            name="phoneNumber"
+            value={formData.phoneNumber}
             onChange={handleChange}
             required
           />
