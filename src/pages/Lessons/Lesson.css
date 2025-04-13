@@ -6,6 +6,7 @@
   }
   
   .nav-buttons {
+    gap: 1rem;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -53,6 +54,7 @@
 
   .quiz-results {
     margin-top: 2rem;
+    margin-bottom: 1rem;
     padding: 1rem;
     border: 1px solid #ccc;
     border-radius: 8px;
@@ -62,5 +64,94 @@
     font-weight: bold;
     color: #28a745;
   }
+
+  .submit-button {
+    background-color:#007bff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 1rem;
+  }
+
+  .submit-button:hover {
+    transition: all 0.3s ease;
+    padding: 0.7rem 1.2rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .try-again-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+  }
+
+  .try-again-button:hover {
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .video-submission {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 2rem auto;
+    max-width: 600px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.video-submission:hover {
+    border-color: #007bff;
+    background-color: #f1f8ff;
+}
+
+.video-submission h2 {
+    color: #2c3e50;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.upload-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 2rem;
+    cursor: pointer;
+    position: relative;
+}
+
+.video-icon {
+    width: 48px;
+    height: 48px;
+    color: #007bff;
+    transition: transform 0.2s ease;
+}
+
+.upload-text {
+    color: #495057;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1rem;
+    text-align: center;
+}
+
+input[type="file"] {
+    display: none;
+}
+
+.selected-file {
+    font-weight: 500;
+    margin-top: 1rem;
+    text-align: center;
+}
   
   

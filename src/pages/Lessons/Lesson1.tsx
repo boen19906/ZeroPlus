@@ -55,6 +55,15 @@ const Lesson1 = () => {
     handleAllAnswersCheck,
     resetQuiz
   } = useQuizCheck(questions);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+  
+    const fileDisplay = document.querySelector('.selected-file');
+    if (fileDisplay) {
+      fileDisplay.textContent = file ? file.name : 'No file selected';
+    }
+  };
   
   return (
     <div className="lesson-container">
@@ -100,15 +109,31 @@ const Lesson1 = () => {
             </div>
           );
         })}
+        <div className="video-submission">
+            <h2>Question 4: Record a video explaining your financial goals</h2>
+            <label htmlFor="video-upload" className="upload-box">
+                <svg className="video-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4zM14 13h-3v3H9v-3H6v-2h3V8h2v3h3v2z"/>
+                </svg>
+                <div className="upload-text">Click to upload video</div>
+                <input 
+                    type="file" 
+                    accept="video/*" 
+                    id="video-upload" 
+                    onChange={handleFileSelect} // Add your handler
+                />
+            </label>
+            <div className="selected-file">No file selected</div>
+        </div>
       </div>
 
       {!isSubmitted ? (
-        <button onClick={handleAllAnswersCheck}>Submit Quiz</button>
+        <button className="submit-button" onClick={handleAllAnswersCheck}>Submit Quiz</button>
       ) : (
         <div className="quiz-results">
           <h3>Quiz Results</h3>
           <p>You got <span>{correctCount} out of {questions.length}</span> questions correct!</p>
-          <button onClick={resetQuiz}>Try Again</button>
+          <button className="try-again-button" onClick={resetQuiz}>Try Again</button>
         </div>
       )}
 

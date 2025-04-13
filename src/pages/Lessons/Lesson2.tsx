@@ -102,12 +102,12 @@ const Lesson2 = () => {
       </div>
 
       {!isSubmitted ? (
-        <button onClick={handleAllAnswersCheck}>Submit Quiz</button>
+        <button className="submit-button" onClick={handleAllAnswersCheck}>Submit Quiz</button>
       ) : (
         <div className="quiz-results">
           <h3>Quiz Results</h3>
           <p>You got <span>{correctCount} out of {questions.length}</span> questions correct!</p>
-          <button onClick={resetQuiz}>Try Again</button>
+          <button className="try-again-button" onClick={resetQuiz}>Try Again</button>
         </div>
       )}
 

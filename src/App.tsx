@@ -22,6 +22,7 @@ import Lesson4 from './pages/Lessons/Lesson4';
 import Lesson5 from './pages/Lessons/Lesson5';
 import Lesson6 from './pages/Lessons/Lesson6';
 import Lesson7 from './pages/Lessons/Lesson7';
+import Admin from './pages/Admin';
 const AppContent = ({ user }: { user: User | null }) => {
   const location = useLocation();
 
@@ -48,6 +49,7 @@ const AppContent = ({ user }: { user: User | null }) => {
           path="/enrollpay"
           element={<EnrollPay user={user} />}
         />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/course" element={<Course user={user} />}/>
         <Route path="/course/lesson1" element={<Lesson1 />} />
         <Route path="/course/lesson2" element={<Lesson2 />} />

@@ -1,12 +1,15 @@
-import { User } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../firebase";
-import { setDoc, doc, updateDoc } from "firebase/firestore";
+import { setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
 import "./Home.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import useScrollToTop from "../hooks/useScroll";
 
 // Create a separate component for the home page that uses useNavigate
 const Home = ({ user }: { user: User | null }) => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  useScrollToTop();
   const navigate = useNavigate();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
 
@@ -26,6 +29,28 @@ const Home = ({ user }: { user: User | null }) => {
     console.log("Package changed to", selectedPackage);
     navigate("/enrollpay");
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser: User | null) => {
+      try {
+        if (currentUser) {
+          // Get user document from Firestore
+          const userDocRef = doc(db, 'users', currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+            setIsAdmin(userDoc.data().admin || false);
+          }
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, db]);
 
   return (
     <div className="home">
@@ -76,6 +101,18 @@ const Home = ({ user }: { user: User | null }) => {
             <p>Join the class to start your journey to success</p>
             <button onClick={() => navigate("/course")}>Join Class</button>
           </div>
+          
+          {isAdmin &&
+          <>
+            <hr/>
+            <div className="admin-section">
+              <h2>Admin</h2>
+              <p>Click the button below to access the admin page</p>
+              <button onClick={() => navigate("/admin")}>Admin</button>
+            </div>
+          </>
+          }
+          
         </>
       )}
     </div>
