@@ -1,0 +1,163 @@
+/* Combined Table Styles */
+.admin-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .table-section {
+    margin: 3rem 0;
+  }
+  
+  .table-section h2 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 0.5rem;
+  }
+  
+  .table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+  }
+  
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+  }
+  
+  .data-table th {
+    background-color: #007bff;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+  }
+  
+  .data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .data-table tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  
+  .uid {
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #666;
+  }
+  
+  .toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1em;
+    padding: 0 0.5rem;
+  }
+  
+  .expanded td {
+    background-color: #f1f8ff;
+    padding: 0;
+  }
+  
+  .student-list {
+    padding: 1rem;
+  }
+  
+  .student-list h4 {
+    margin: 0 0 1rem 0;
+    color: #444;
+  }
+  
+  .student-email {
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .student-email:last-child {
+    border-bottom: none;
+  }
+  
+  .loading, .error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1em;
+  }
+  
+  .error {
+    color: #dc3545;
+  }
+
+  /* Student List Styles */
+.student-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .student-email {
+    flex-grow: 1;
+  }
+  
+  .remove-student-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0 0.5rem;
+    transition: color 0.2s ease;
+  }
+  
+  .remove-student-btn:hover {
+    color: #bb2d3b;
+  }
+  
+  .student-list {
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  /* Delete button styles */
+.delete-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.delete-btn:hover {
+  color: #bb2d3b;
+}
+
+.create-draft-btn {
+  background-color: #28a745;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.create-draft-btn:hover {
+  background-color: #218838;
+}
+
+/* Adjust table column widths */
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  width: 50px;
+  padding: 0 0.5rem;
+}

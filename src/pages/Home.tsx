@@ -1,7 +1,7 @@
 import { onAuthStateChanged, User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../firebase";
-import { setDoc, doc, updateDoc, getDoc } from "firebase/firestore";
+import { setDoc, doc, updateDoc, getDoc, arrayUnion } from "firebase/firestore";
 import "./Home.css";
 import { useEffect, useState } from "react";
 import useScrollToTop from "../hooks/useScroll";
@@ -28,6 +28,28 @@ const Home = ({ user }: { user: User | null }) => {
     
     console.log("Package changed to", selectedPackage);
     navigate("/enrollpay");
+  };
+
+  const handleJoinClass = async () => {
+    if (!user) {
+      alert('Please log in to join class');
+      return;
+    }
+
+    try {
+      navigate('/course');
+      const courseRef = doc(db, 'courses', '9MPz8i5c4izfgxrapfc7');
+      
+      await updateDoc(courseRef, {
+        students: arrayUnion(user.uid)
+      });
+
+      
+      console.log("Joined class");
+    } catch (err) {
+      console.error('Error joining class:', err);
+      alert('Failed to join class');
+    }
   };
 
   useEffect(() => {
@@ -60,10 +82,12 @@ const Home = ({ user }: { user: User | null }) => {
           <p>
             You are signed in as <strong>{user.email}</strong>
           </p>
-          <div className="packages-grid">
+          {!isAdmin &&
+          <>
+            <div className="packages-grid">
             <div 
-              className={`package-box ${selectedPackage === "basic" ? "selected" : ""}`} 
-              onClick={() => handlePackageSelect("basic")}
+              className={`package-box ${selectedPackage === "Basic" ? "selected" : ""}`} 
+              onClick={() => handlePackageSelect("Basic")}
             >
               <h4>Basic Package</h4>
               <p>$200</p>
@@ -75,8 +99,8 @@ const Home = ({ user }: { user: User | null }) => {
             </div>
             
             <div 
-              className={`package-box ${selectedPackage === "pro" ? "selected" : ""}`} 
-              onClick={() => handlePackageSelect("pro")}
+              className={`package-box ${selectedPackage === "Pro" ? "selected" : ""}`} 
+              onClick={() => handlePackageSelect("Pro")}
             >
               <h4>Pro Package</h4>
               <p>$500</p>
@@ -95,12 +119,28 @@ const Home = ({ user }: { user: User | null }) => {
           >
             {selectedPackage ? `Select ${selectedPackage.charAt(0).toUpperCase() + selectedPackage.slice(1)} Package` : "Select a Package"}
           </button>
-          
+
           <div className="join-class-section">
             <h2>Join Class</h2>
             <p>Join the class to start your journey to success</p>
-            <button onClick={() => navigate("/course")}>Join Class</button>
+            <button onClick={handleJoinClass}>Join Class</button>
           </div>
+          </>
+          }
+          
+          
+         
+
+          {!isAdmin &&
+            <>
+              <hr/>
+              <div className="homework-section">
+              <h2>Homework</h2>
+              <p>Check your homework assignments</p>
+              <button onClick={() => navigate("/homework")}>Go to Homework</button>
+            </div>
+            </>
+          }
           
           {isAdmin &&
           <>

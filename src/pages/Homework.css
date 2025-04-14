@@ -1,0 +1,109 @@
+/* Homework Component Styles */
+.homework-container {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.loading {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1em;
+    color: #666;
+}
+
+.error {
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1em;
+    color: #dc3545;
+}
+
+.table-section {
+    margin: 2rem 0;
+}
+
+.table-section h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #007bff;
+    font-size: 1.5rem;
+}
+
+.table-container {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 600px;
+}
+
+.data-table th {
+    background-color: #007bff;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+.data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+}
+
+.data-table tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.data-table tr:hover {
+    background-color: #e9f5ff;
+    cursor: pointer;
+}
+
+.even-row {
+    background-color: #f8f9fa;
+}
+
+/* Status Dropdown Styles */
+.status-dropdown {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .status-dropdown:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+  
+  .status-dropdown option {
+    padding: 0.5rem;
+  }
+  
+  /* Add to existing table styles */
+  .data-table td:last-child {
+    width: 160px;
+  }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .homework-container {
+        padding: 1rem;
+    }
+    
+    .data-table th,
+    .data-table td {
+        padding: 0.75rem;
+    }
+}

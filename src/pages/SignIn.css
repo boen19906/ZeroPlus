@@ -1,3 +1,4 @@
+
 .signup-container {
     display: flex;
     flex-direction: column;
@@ -8,6 +9,13 @@
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    margin: 0 auto; /* Center container horizontally */
+}
+
+.signup-container form {
+    width: 100%;
+    padding: 0; /* Ensure no extra padding */
 }
 
 .signup-container h2 {
@@ -19,9 +27,14 @@
 .form-group {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 1.25rem;
+    width: 100%;
+    padding: 0; /* Reset any default padding */
 }
 
+/* Rest of your existing styles remain the same */
 .form-group label {
     display: block;
     margin-bottom: 0.5rem;
@@ -35,6 +48,9 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
+    margin-left: 0; /* Explicitly reset margin */
+    margin-right: 0;
+    text-align: center;
 }
 
 .form-group input:focus {
@@ -53,6 +69,7 @@ button[type="submit"] {
     font-size: 1rem;
     cursor: pointer;
     transition: background-color 0.2s;
+    margin-top:1rem;
 }
 
 button[type="submit"]:hover {
@@ -66,4 +83,5 @@ button[type="submit"]:hover {
     margin-bottom: 1rem;
     border-radius: 4px;
     text-align: center;
+    width: 100%; /* Ensure error message takes full width */
 }

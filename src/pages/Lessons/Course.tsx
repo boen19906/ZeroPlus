@@ -3,7 +3,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom"; // Import Outlet
 import "./Course.css";
-import useScrollToTop from "../hooks/useScroll";
+import useScrollToTop from "../../hooks/useScroll";
 
 const Course = ({ user }: { user: User | null }) => {
     useScrollToTop();

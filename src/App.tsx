@@ -14,7 +14,7 @@ import { auth } from './firebase';
 import Home from './pages/Home';
 import NavBar from './components/NavBar';
 import EnrollPay from './pages/EnrollPay';
-import Course from './pages/Course';
+import Course from './pages/Lessons/Course';
 import Lesson1 from './pages/Lessons/Lesson1';
 import Lesson2 from './pages/Lessons/Lesson2';
 import Lesson3 from './pages/Lessons/Lesson3';
@@ -22,7 +22,9 @@ import Lesson4 from './pages/Lessons/Lesson4';
 import Lesson5 from './pages/Lessons/Lesson5';
 import Lesson6 from './pages/Lessons/Lesson6';
 import Lesson7 from './pages/Lessons/Lesson7';
-import Admin from './pages/Admin';
+import Admin from './pages/Admin/Admin';
+import Homework from './pages/Homework';
+import CreateDraft from './pages/Admin/CreateDraft';
 const AppContent = ({ user }: { user: User | null }) => {
   const location = useLocation();
 
@@ -49,7 +51,16 @@ const AppContent = ({ user }: { user: User | null }) => {
           path="/enrollpay"
           element={<EnrollPay user={user} />}
         />
+        <Route
+          path="/homework"
+          element={<Homework/>}
+        />
         <Route path="/admin" element={<Admin />} />
+        <Route 
+          path="/admin/create-draft/:courseId" 
+          element={<CreateDraft />} 
+        />
+
         <Route path="/course" element={<Course user={user} />}/>
         <Route path="/course/lesson1" element={<Lesson1 />} />
         <Route path="/course/lesson2" element={<Lesson2 />} />
