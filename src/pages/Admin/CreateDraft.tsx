@@ -7,15 +7,13 @@ import './CreateDraft.css'; // Use the provided CSS
 interface CompletionStatus {
     userId: string;
     completed: boolean;
-  }
-
+}
 
 interface HomeworkDraft {
   name: string;
   assignedDate: Timestamp;
   dueDate: Timestamp;
   posted: boolean;
-  completed: CompletionStatus[];
   assignmentDescription: string;
 }
 
@@ -31,6 +29,13 @@ const CreateDraft: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
+
+  // Helper function to create a date at local midnight
+  const createLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day); // Month is 0-indexed in JS Date
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -50,14 +55,18 @@ const CreateDraft: React.FC = () => {
         throw new Error('Course not found');
       }
   
-      // Get existing homework and parse dates
+      // Get existing homework and parse dates correctly
       const existingHomework = courseSnap.data().homework || [];
+      
+      // Create dates at local midnight to avoid timezone issues
+      const assignedDate = createLocalDate(formData.assignedDate);
+      const dueDate = createLocalDate(formData.dueDate);
+      
       const newHomework = {
         name: formData.name,
-        assignedDate: Timestamp.fromDate(new Date(formData.assignedDate)),
-        dueDate: Timestamp.fromDate(new Date(formData.dueDate)),
+        assignedDate: Timestamp.fromDate(assignedDate),
+        dueDate: Timestamp.fromDate(dueDate),
         posted: false,
-        completed: [],
         assignmentDescription: formData.assignmentDescription
       };
   

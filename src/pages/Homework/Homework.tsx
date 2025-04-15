@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, Timestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase"; // Adjust your firebase import path
 import "./Homework.css";
 import { useNavigate } from "react-router-dom";
@@ -14,16 +14,79 @@ interface Homework {
   dueDate: Timestamp; // Firestore Timestamp or string
   name: string;
   posted: boolean;
-  completed: CompletionStatus[]; // Array of completion status for each user
+  completed?: CompletionStatus[]; // Keeping this for compatibility with existing data
+}
+
+interface LocalHomework extends Homework {
+  localCompleted: boolean; // Local completion status
+  id: string; // Unique identifier for the homework
 }
 
 const Homework = () => {
-  const [homework, setHomework] = useState<Homework[]>([]);
+  const [homework, setHomework] = useState<LocalHomework[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const currentUserId = auth.currentUser?.uid || "";
   
   const navigate = useNavigate();
+
+  // Generate a consistent ID for a homework item
+  const generateHomeworkId = (hw: Homework): string => {
+    // Create a deterministic ID using name and dates
+    const assignedDateStr = hw.assignedDate ? hw.assignedDate.toDate().getTime() : 'nodate';
+    const dueDateStr = hw.dueDate ? hw.dueDate.toDate().getTime() : 'nodate';
+    return `${hw.name}-${assignedDateStr}-${dueDateStr}`;
+  };
+
+  // Load completion statuses from localStorage
+  const getCompletionMap = (): {[key: string]: boolean} => {
+    const localStatusKey = `homework-status-${currentUserId}`;
+    const savedStatus = localStorage.getItem(localStatusKey);
+    return savedStatus ? JSON.parse(savedStatus) : {};
+  };
+
+  // Apply completion status to homework items
+  const applyCompletionStatus = (homeworkData: Homework[]) => {
+    const completionMap = getCompletionMap();
+    
+    return homeworkData.map(hw => {
+      const hwId = generateHomeworkId(hw);
+      return {
+        ...hw,
+        localCompleted: completionMap[hwId] === true,
+        id: hwId
+      };
+    });
+  };
+
+  // Save completion status to localStorage
+  const saveCompletionStatus = (hwId: string, isCompleted: boolean) => {
+    const completionMap = getCompletionMap();
+    completionMap[hwId] = isCompleted;
+    
+    const localStatusKey = `homework-status-${currentUserId}`;
+    localStorage.setItem(localStatusKey, JSON.stringify(completionMap));
+  };
+
+  // Check if a due date has passed
+  const isDatePassed = (date: Timestamp | null | undefined): boolean => {
+    if (!date) return false;
+    
+    try {
+      const dueDate = date.toDate();
+      const today = new Date();
+      
+      // Reset time components to compare dates only
+      today.setHours(0, 0, 0, 0);
+      dueDate.setHours(0, 0, 0, 0);
+      
+      // Use > instead of >= to include today's assignments
+      return dueDate < today;
+    } catch (err) {
+      console.error("Error comparing dates:", err);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const fetchHomework = async () => {
@@ -37,11 +100,17 @@ const Homework = () => {
 
         const courseData = courseSnap.data();
         const homeworkData = courseData.homework || [];
+        
+        // Filter homework that is posted AND due date has not passed
+        const currentDate = new Date();
         const filteredHomework = homeworkData.filter(
-          (h: Homework) => h.posted === true
+          (h: Homework) => h.posted === true && 
+                           (!h.dueDate || !isDatePassed(h.dueDate))
         );
 
-        setHomework(filteredHomework);
+        // Apply local completion status from localStorage
+        const homeworkWithLocalStatus = applyCompletionStatus(filteredHomework);
+        setHomework(homeworkWithLocalStatus);
         setError(null);
       } catch (err: any) {
         setError(err.message);
@@ -51,74 +120,21 @@ const Homework = () => {
     };
 
     fetchHomework();
-  }, []);
+  }, [currentUserId]);
 
-  // Check if the current user has marked the homework as completed
-  const isCompletedByCurrentUser = (hw: Homework) => {
-    if (!hw.completed || !Array.isArray(hw.completed)) return false;
+  const handleStatusChange = (homeworkId: string, newStatus: boolean) => {
+    // Save to localStorage first
+    saveCompletionStatus(homeworkId, newStatus);
     
-    const userCompletion = hw.completed.find(item => item.userId === currentUserId);
-    return userCompletion ? userCompletion.completed : false;
-  };
-
-  const handleStatusChange = async (index: number, newStatus: boolean) => {
-    try {
-      const courseRef = doc(db, "courses", "9MPz8i5c4izfgxrapfc7");
-      const courseSnap = await getDoc(courseRef);
-      if (!courseSnap.exists()) return;
-
-      const courseData = courseSnap.data();
-      const updatedHomework = [...courseData.homework];
-      
-      // Ensure completed array exists
-      if (!updatedHomework[index].completed || !Array.isArray(updatedHomework[index].completed)) {
-        updatedHomework[index].completed = [];
-      }
-
-      // Find if the user already has a completion status
-      const userIndex = updatedHomework[index].completed.findIndex(
-        (item: CompletionStatus) => item.userId === currentUserId
-      );
-
-      if (userIndex >= 0) {
-        // Update existing status
-        updatedHomework[index].completed[userIndex].completed = newStatus;
-      } else {
-        // Add new status
-        updatedHomework[index].completed.push({
-          userId: currentUserId,
-          completed: newStatus
-        });
-      }
-
-      await updateDoc(courseRef, { homework: updatedHomework });
-      
-      // Update local state
-      setHomework(prev => {
-        const updated = [...prev];
-        if (!updated[index].completed || !Array.isArray(updated[index].completed)) {
-          updated[index].completed = [];
+    // Then update local state
+    setHomework(prev => {
+      return prev.map(hw => {
+        if (hw.id === homeworkId) {
+          return {...hw, localCompleted: newStatus};
         }
-        
-        const localUserIndex = updated[index].completed.findIndex(
-          item => item.userId === currentUserId
-        );
-        
-        if (localUserIndex >= 0) {
-          updated[index].completed[localUserIndex].completed = newStatus;
-        } else {
-          updated[index].completed.push({
-            userId: currentUserId,
-            completed: newStatus
-          });
-        }
-        
-        return updated;
+        return hw;
       });
-    } catch (err) {
-      console.error("Error updating status:", err);
-      setError("Failed to update assignment status");
-    }
+    });
   };
 
   const formatDate = (date: any) => {
@@ -131,8 +147,12 @@ const Homework = () => {
   };
 
   // Handle navigation to assignment details
-  const navigateToAssignment = (index: number) => {
-    navigate(`/homework/assignment/${index}`);
+  const navigateToAssignment = (homeworkId: string) => {
+    // Find the index by matching the ID
+    const index = homework.findIndex(hw => hw.id === homeworkId);
+    if (index !== -1) {
+      navigate(`/homework/assignment/${index}`);
+    }
   };
 
   // Stop event propagation when interacting with dropdown
@@ -151,10 +171,10 @@ const Homework = () => {
   return (
     <div className="homework-container">
       <div className="table-section">
-        <h1>Homework Assignments</h1>
+        <h1>Current Homework Assignments</h1>
         <div className="table-container">
           {homework.length === 0 ? (
-            <div className="loading">No posted homework found</div>
+            <div className="loading">No current homework assignments found</div>
           ) : (
             <table className="data-table">
               <thead>
@@ -166,19 +186,19 @@ const Homework = () => {
                 </tr>
               </thead>
               <tbody>
-                {homework.map((hw, index) => (
+                {homework.map((hw) => (
                   <tr 
-                    key={index}
-                    onClick={() => navigateToAssignment(index)} 
-                    className={index % 2 === 0 ? "" : "even-row"}
+                    key={hw.id}
+                    onClick={() => navigateToAssignment(hw.id)} 
+                    className={homework.indexOf(hw) % 2 === 0 ? "" : "even-row"}
                   >
                     <td>{hw.name}</td>
                     <td>{formatDate(hw.assignedDate)}</td>
                     <td>{formatDate(hw.dueDate)}</td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <select
-                        value={isCompletedByCurrentUser(hw) ? "complete" : "not-complete"}
-                        onChange={(e) => handleStatusChange(index, e.target.value === "complete")}
+                        value={hw.localCompleted ? "complete" : "not-complete"}
+                        onChange={(e) => handleStatusChange(hw.id, e.target.value === "complete")}
                         onClick={handleSelectClick}
                         className="status-dropdown"
                       >
