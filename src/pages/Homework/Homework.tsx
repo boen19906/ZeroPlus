@@ -23,7 +23,6 @@ const Homework = () => {
   const [error, setError] = useState<string | null>(null);
   const currentUserId = auth.currentUser?.uid || "";
   
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -131,6 +130,16 @@ const Homework = () => {
     }
   };
 
+  // Handle navigation to assignment details
+  const navigateToAssignment = (index: number) => {
+    navigate(`/homework/assignment/${index}`);
+  };
+
+  // Stop event propagation when interacting with dropdown
+  const handleSelectClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   if (loading) {
     return <div className="loading">Loading homework assignments...</div>;
   }
@@ -158,14 +167,19 @@ const Homework = () => {
               </thead>
               <tbody>
                 {homework.map((hw, index) => (
-                  <tr onClick={() => navigate(`/homework/assignment/${index}`)}  className={index % 2 === 0 ? "" : "even-row"}>
+                  <tr 
+                    key={index}
+                    onClick={() => navigateToAssignment(index)} 
+                    className={index % 2 === 0 ? "" : "even-row"}
+                  >
                     <td>{hw.name}</td>
                     <td>{formatDate(hw.assignedDate)}</td>
                     <td>{formatDate(hw.dueDate)}</td>
-                    <td>
+                    <td onClick={(e) => e.stopPropagation()}>
                       <select
                         value={isCompletedByCurrentUser(hw) ? "complete" : "not-complete"}
                         onChange={(e) => handleStatusChange(index, e.target.value === "complete")}
+                        onClick={handleSelectClick}
                         className="status-dropdown"
                       >
                         <option value="complete">Complete</option>
