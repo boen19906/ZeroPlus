@@ -291,28 +291,36 @@ const Admin: React.FC = () => {
                                   <th>Posted Status</th>
                                   <th>Actions</th>
                                   <th>Delete</th>
-                                 {/* Empty header for delete column */}
                                 </tr>
                               </thead>
                               <tbody>
                                 {course.homework?.map((hw, hwIndex) => (
-                                  <tr onClick={() => navigate(`/homework/assignment/${hwIndex}`)} key={`${hw.name}-${hwIndex}`}>
+                                  <tr 
+                                    onClick={() => navigate(`/homework/assignment/${hwIndex}`)} 
+                                    key={`${hw.name}-${hwIndex}`}
+                                  >
                                     <td>{hw.name}</td>
                                     <td>{formatDate(hw.assignedDate)}</td>
                                     <td>{formatDate(hw.dueDate)}</td>
                                     <td>{hw.posted ? "Posted" : "Draft"}</td>
-                                    <td>
+                                    <td onClick={(e) => e.stopPropagation()}>
                                       <button
                                         className={`post-btn ${hw.posted ? 'posted' : 'draft'}`}
-                                        onClick={() => handleTogglePost(course.id, hwIndex)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTogglePost(course.id, hwIndex);
+                                        }}
                                       >
                                         {hw.posted ? "Unpost" : "Post"}
                                       </button>
                                     </td>
-                                    <td>
+                                    <td onClick={(e) => e.stopPropagation()}>
                                       <button
                                         className="delete-btn"
-                                        onClick={() => handleDeleteAssignment(course.id, hwIndex)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteAssignment(course.id, hwIndex);
+                                        }}
                                       >
                                         ×
                                       </button>
