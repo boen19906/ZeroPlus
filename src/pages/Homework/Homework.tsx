@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { doc, getDoc, Timestamp, updateDoc } from "firebase/firestore";
-import { auth, db } from "../firebase"; // Adjust your firebase import path
+import { auth, db } from "../../firebase"; // Adjust your firebase import path
 import "./Homework.css";
+import { useNavigate } from "react-router-dom";
 
 interface CompletionStatus {
   userId: string;
@@ -21,6 +22,9 @@ const Homework = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const currentUserId = auth.currentUser?.uid || "";
+  
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchHomework = async () => {
@@ -154,7 +158,7 @@ const Homework = () => {
               </thead>
               <tbody>
                 {homework.map((hw, index) => (
-                  <tr key={`${hw.name}-${index}`} className={index % 2 === 0 ? "" : "even-row"}>
+                  <tr onClick={() => navigate(`/homework/assignment/${index}`)}  className={index % 2 === 0 ? "" : "even-row"}>
                     <td>{hw.name}</td>
                     <td>{formatDate(hw.assignedDate)}</td>
                     <td>{formatDate(hw.dueDate)}</td>

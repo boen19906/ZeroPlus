@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { signInWithEmailAndPassword } from "firebase/auth"; // Use signInWithEmailAndPassword
-import { auth } from "../firebase"; // Only auth is needed for sign-in
+import { auth } from "../../firebase"; // Only auth is needed for sign-in
 import { useNavigate } from "react-router-dom";
 import './SignIn.css';
 

@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Lesson.css";
 import { useQuizCheck } from "../../hooks/useQuiz";

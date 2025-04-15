@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { db, auth } from "../firebase";
+import { db, auth } from "../../firebase";
 import { setDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import './SignIn.css'; // Reuse the same CSS

@@ -1,7 +1,5 @@
 import { User } from "firebase/auth";
-import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Outlet } from "react-router-dom"; // Import Outlet
 import "./Course.css";
 import useScrollToTop from "../../hooks/useScroll";
 

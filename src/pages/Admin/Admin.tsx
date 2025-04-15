@@ -290,12 +290,13 @@ const Admin: React.FC = () => {
                                   <th>Due Date</th>
                                   <th>Posted Status</th>
                                   <th>Actions</th>
-                                  <th></th> {/* Empty header for delete column */}
+                                  <th>Delete</th>
+                                 {/* Empty header for delete column */}
                                 </tr>
                               </thead>
                               <tbody>
                                 {course.homework?.map((hw, hwIndex) => (
-                                  <tr key={`${hw.name}-${hwIndex}`}>
+                                  <tr onClick={() => navigate(`/homework/assignment/${hwIndex}`)} key={`${hw.name}-${hwIndex}`}>
                                     <td>{hw.name}</td>
                                     <td>{formatDate(hw.assignedDate)}</td>
                                     <td>{formatDate(hw.dueDate)}</td>

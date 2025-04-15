@@ -5,8 +5,8 @@ import {
   Navigate,
   useLocation,
 } from 'react-router-dom';
-import SignIn from './pages/SignIn';
-import SignUp from './pages/SignUp';
+import SignIn from './pages/SignIn/SignIn';
+import SignUp from './pages/SignIn/SignUp';
 import './App.css';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
@@ -23,8 +23,9 @@ import Lesson5 from './pages/Lessons/Lesson5';
 import Lesson6 from './pages/Lessons/Lesson6';
 import Lesson7 from './pages/Lessons/Lesson7';
 import Admin from './pages/Admin/Admin';
-import Homework from './pages/Homework';
+import Homework from './pages/Homework/Homework';
 import CreateDraft from './pages/Admin/CreateDraft';
+import Assignment from './pages/Homework/Assignment';
 const AppContent = ({ user }: { user: User | null }) => {
   const location = useLocation();
 
@@ -51,10 +52,10 @@ const AppContent = ({ user }: { user: User | null }) => {
           path="/enrollpay"
           element={<EnrollPay user={user} />}
         />
-        <Route
-          path="/homework"
-          element={<Homework/>}
-        />
+        <Route path="/homework" element={<Homework/>}/>
+        <Route path="/homework/assignment/:index" element={<Assignment />} />
+
+
         <Route path="/admin" element={<Admin />} />
         <Route 
           path="/admin/create-draft/:courseId" 
@@ -89,7 +90,7 @@ const App = () => {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="loading">Loading...</div>;
   }
 
   return (

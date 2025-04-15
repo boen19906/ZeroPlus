@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { doc, updateDoc, arrayUnion, Timestamp, getDoc} from 'firebase/firestore';
+import { doc, updateDoc, Timestamp, getDoc} from 'firebase/firestore';
 import { db } from '../../firebase'; // Adjust your firebase config path
 import './CreateDraft.css'; // Use the provided CSS
 
@@ -16,6 +16,7 @@ interface HomeworkDraft {
   dueDate: Timestamp;
   posted: boolean;
   completed: CompletionStatus[];
+  assignmentDescription: string;
 }
 
 const CreateDraft: React.FC = () => {
@@ -23,7 +24,8 @@ const CreateDraft: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     assignedDate: '',
-    dueDate: ''
+    dueDate: '',
+    assignmentDescription: ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -55,7 +57,8 @@ const CreateDraft: React.FC = () => {
         assignedDate: Timestamp.fromDate(new Date(formData.assignedDate)),
         dueDate: Timestamp.fromDate(new Date(formData.dueDate)),
         posted: false,
-        completed: []
+        completed: [],
+        assignmentDescription: formData.assignmentDescription
       };
   
       // Find the correct position to insert
@@ -78,7 +81,7 @@ const CreateDraft: React.FC = () => {
       });
   
       setSuccess(true);
-      setFormData({ name: '', assignedDate: '', dueDate: '' });
+      setFormData({ name: '', assignedDate: '', dueDate: '', assignmentDescription: '' });
       setTimeout(() => setSuccess(false), 3000);
       navigate('/admin');
     } catch (err: any) {
@@ -118,17 +121,28 @@ const CreateDraft: React.FC = () => {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="dueDate">Due Date</label>
-            <input
-              type="date"
-              id="dueDate"
-              value={formData.dueDate}
-              onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-              disabled={loading}
-              required
-            />
-          </div>
+            <div className="form-group">
+                <label htmlFor="dueDate">Due Date</label>
+                <input
+                type="date"
+                id="dueDate"
+                value={formData.dueDate}
+                onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                disabled={loading}
+                required
+                />
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="assignmentDescription">Assignment Description</label>
+                <textarea
+                id="assignmentDescription"
+                value={formData.assignmentDescription}
+                onChange={(e) => setFormData({...formData, assignmentDescription: e.target.value})}
+                disabled={loading}
+                required
+                />
+            </div>
 
           {error && <div className="error">{error}</div>}
           {success && <div className="success">Draft created successfully!</div>}
