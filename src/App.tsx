@@ -53,7 +53,7 @@ const AppContent = ({ user }: { user: User | null }) => {
           element={<EnrollPay user={user} />}
         />
         <Route path="/homework" element={<Homework/>}/>
-        <Route path="/homework/assignment/:index" element={<Assignment />} />
+        <Route path="/homework/assignment/:id" element={<Assignment />} />
 
 
         <Route path="/admin" element={<Admin />} />
@@ -62,7 +62,7 @@ const AppContent = ({ user }: { user: User | null }) => {
           element={<CreateDraft />} 
         />
 
-        <Route path="/course" element={<Course user={user} />}/>
+        <Route path="/course" element={<Course />}/>
         <Route path="/course/lesson1" element={<Lesson1 />} />
         <Route path="/course/lesson2" element={<Lesson2 />} />
         <Route path="/course/lesson3" element={<Lesson3 />} />

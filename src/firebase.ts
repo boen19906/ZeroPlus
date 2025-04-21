@@ -11,7 +11,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyA_WTHBhX-k63ZFpqazq_YAGBcc90ySU4Q",
   authDomain: "zeroplus-viet.firebaseapp.com",
   projectId: "zeroplus-viet",
-  storageBucket: "zeroplus-viet.appspot.com",
+  storageBucket: "zeroplus-viet.firebasestorage.app",
   messagingSenderId: "788416648238",
   appId: "1:788416648238:web:fefab749c317a459073bbf"
 };

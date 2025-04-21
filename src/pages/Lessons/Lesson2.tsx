@@ -57,14 +57,14 @@ const Lesson2 = () => {
   return (
     <div className="lesson-container">
       <h1>Lesson 2</h1>
-      <p>This is the first lesson of the course.</p>
+      <p>This is the second lesson of the course.</p>
 
       {/* YouTube Video Embed */}
       <div style={{ margin: "20px 0" }}>
         <iframe
           width="560"
           height="315"
-          src="https://www.youtube.com/embed/4XZIv4__sQA"
+          src="https://www.youtube.com/embed/dbDijzEgo7E"
           title="YouTube video player"
           frameBorder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
