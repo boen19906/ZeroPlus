@@ -70,9 +70,10 @@
   .select-package-btn:disabled {
     background-color: #aaa;
     cursor: not-allowed;
+
   }
   
   .select-package-btn:not(:disabled):hover {
     background-color: #0056b3;
   }
-  
+
