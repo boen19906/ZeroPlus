@@ -3,18 +3,27 @@ import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "../../firebase"; // Adjust your firebase import path
 import "./Homework.css";
 import { useNavigate } from "react-router-dom";
+import generateHomeworkId from "../../hooks/useId";
 
-interface CompletionStatus {
+
+export interface Submission {
   userId: string;
-  completed: boolean;
+  fileURL: string;
+  originalFilename: string;
+  timestamp: Timestamp;
 }
 
+
 interface Homework {
+  assignmentDescription: string;
   assignedDate: Timestamp;
   dueDate: Timestamp; // Firestore Timestamp or string
   name: string;
   posted: boolean;
-  completed?: CompletionStatus[]; // Keeping this for compatibility with existing data
+  id: string;
+  submitted: { [userId: string]: boolean };
+  locked: boolean;
+  submittedFiles?: Submission[];
 }
 
 interface LocalHomework extends Homework {
@@ -30,13 +39,7 @@ const Homework = () => {
   
   const navigate = useNavigate();
 
-  // Generate a consistent ID for a homework item
-  const generateHomeworkId = (hw: Homework): string => {
-    // Create a deterministic ID using name and dates
-    const assignedDateStr = hw.assignedDate ? hw.assignedDate.toDate().getTime() : 'nodate';
-    const dueDateStr = hw.dueDate ? hw.dueDate.toDate().getTime() : 'nodate';
-    return `${hw.name}-${assignedDateStr}-${dueDateStr}`;
-  };
+
 
   // Load completion statuses from localStorage
   const getCompletionMap = (): {[key: string]: boolean} => {

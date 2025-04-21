@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayRemove, Timestamp } from 'firebase/firestore';
 import './Admin.css';
 import { useNavigate } from 'react-router-dom';
+import Homework from '../Homework/Homework';
 
 interface User {
   id: string;
@@ -10,19 +11,12 @@ interface User {
   admin?: boolean;
 }
 
-interface Homework {
-  name: string;
-  assignedDate: Timestamp;
-  dueDate: Timestamp;
-  posted: boolean;
-}
-
 interface Course {
   id: string;
   courseName: string;
   students: string[];
   studentEmails: string[];
-  homework?: Homework[];
+  homework: Homework[];
 }
 
 const Admin: React.FC = () => {
@@ -35,9 +29,7 @@ const Admin: React.FC = () => {
 
   const navigate = useNavigate();
 
-  
-
-  const handleTogglePost = async (courseId: string, hwIndex: number) => {
+  const handleTogglePost = async (courseId: string, hwId: string) => {
     try {
       const courseRef = doc(db, 'courses', courseId);
       const courseSnap = await getDoc(courseRef);
@@ -46,22 +38,22 @@ const Admin: React.FC = () => {
   
       const courseData = courseSnap.data();
       const homework = [...(courseData.homework || [])];
+      const hwIndex = homework.findIndex(hw => hw.id === hwId);
+      
+      if (hwIndex === -1) return;
+      
       homework[hwIndex].posted = !homework[hwIndex].posted;
   
-      // Update Firestore
       await updateDoc(courseRef, { homework });
   
-      // Refresh data after update
-      const updatedCourseSnap = await getDoc(courseRef);
-      const updatedCourseData = updatedCourseSnap.data();
-  
-      // Update local state with fresh data
       setCourses(prevCourses => 
         prevCourses.map(course => {
           if (course.id === courseId) {
             return {
               ...course,
-              homework: updatedCourseData?.homework || []
+              homework: course.homework?.map(hw => 
+                hw.id === hwId ? {...hw, posted: !hw.posted} : hw
+              )
             };
           }
           return course;
@@ -73,7 +65,45 @@ const Admin: React.FC = () => {
     }
   };
 
-  const handleDeleteAssignment = async (courseId: string, hwIndex: number) => {
+  const handleToggleLock = async (courseId: string, hwId: string) => {
+    try {
+      const courseRef = doc(db, 'courses', courseId);
+      const courseSnap = await getDoc(courseRef);
+      
+      if (!courseSnap.exists()) return;
+  
+      const courseData = courseSnap.data();
+      const homework = [...(courseData.homework || [])];
+      const hwIndex = homework.findIndex(hw => hw.id === hwId);
+      
+      if (hwIndex === -1) return;
+      
+      // Toggle the locked status
+      homework[hwIndex].locked = !homework[hwIndex].locked;
+  
+      await updateDoc(courseRef, { homework });
+  
+      // Update local state to match Firestore changes
+      setCourses(prevCourses => 
+        prevCourses.map(course => {
+          if (course.id === courseId) {
+            return {
+              ...course,
+              homework: course.homework?.map(hw => 
+                hw.id === hwId ? {...hw, locked: !hw.locked} : hw
+              )
+            };
+          }
+          return course;
+        })
+      );
+    } catch (err) {
+      console.error('Error updating lock status:', err);
+      alert('Failed to update lock status');
+    }
+  };
+  
+  const handleDeleteAssignment = async (courseId: string, hwId: string) => {
     try {
       const courseRef = doc(db, 'courses', courseId);
       const courseSnap = await getDoc(courseRef);
@@ -82,7 +112,7 @@ const Admin: React.FC = () => {
   
       const courseData = courseSnap.data();
       const updatedHomework = courseData.homework.filter(
-        (_: any, index: number) => index !== hwIndex
+        (hw: Homework) => hw.id !== hwId
       );
   
       await updateDoc(courseRef, { homework: updatedHomework });
@@ -92,7 +122,7 @@ const Admin: React.FC = () => {
           if (course.id === courseId) {
             return {
               ...course,
-              homework: course.homework?.filter((_, index) => index !== hwIndex)
+              homework: course.homework?.filter(hw => hw.id !== hwId)
             };
           }
           return course;
@@ -208,7 +238,6 @@ const Admin: React.FC = () => {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>UID</th>
-                <th>Admin</th>
               </tr>
             </thead>
             <tbody>
@@ -217,7 +246,6 @@ const Admin: React.FC = () => {
                   <td>{user.email || 'N/A'}</td>
                   <td>{user.phoneNumber || 'N/A'}</td>
                   <td className="uid">{user.id}</td>
-                  <td>{user.admin ? '✅' : '❌'}</td>
                 </tr>
               ))}
             </tbody>
@@ -274,7 +302,7 @@ const Admin: React.FC = () => {
 
                         {/* Homework Assignments Table */}
                         <div className="homework-section">
-                          <h3>Homework Assignments:</h3>
+                          <h3>Lesson Assignments:</h3>
                           <button 
                             onClick={() => navigate(`/admin/create-draft/${course.id}`)}
                             className="create-draft-btn"
@@ -288,45 +316,68 @@ const Admin: React.FC = () => {
                                   <th>Assignment Name</th>
                                   <th>Assigned Date</th>
                                   <th>Due Date</th>
-                                  <th>Posted Status</th>
-                                  <th>Actions</th>
+                                  <th>Lock Status</th>
+                                  <th>Post Status</th>
                                   <th>Delete</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {course.homework?.map((hw, hwIndex) => (
-                                  <tr 
-                                    onClick={() => navigate(`/homework/assignment/${hwIndex}`)} 
-                                    key={`${hw.name}-${hwIndex}`}
+                              {course.homework?.map((hw) => (
+                              <tr 
+                                onClick={() => {
+                                  // Store the homework data in sessionStorage before navigation
+                                  const homeworkData = {
+                                    ...hw,
+                                    id: hw.id,
+                                    assignedDate: hw.assignedDate,
+                                    dueDate: hw.dueDate,
+                                    name: hw.name,
+                                    posted: hw.posted
+                                  };
+                                  sessionStorage.setItem('allHomework', JSON.stringify([homeworkData]));
+                                  navigate(`/homework/assignment/${hw.id}`);
+                                }} 
+                                key={hw.id}
+                              >
+                                <td>{hw.name}</td>
+                                <td>{formatDate(hw.assignedDate)}</td>
+                                <td>{formatDate(hw.dueDate)}</td>
+                                {/* New Lock/Unlock Column */}
+                                <td onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className={`lock-btn ${hw.locked ? 'locked' : 'unlocked'}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleLock(course.id, hw.id);
+                                    }}
                                   >
-                                    <td>{hw.name}</td>
-                                    <td>{formatDate(hw.assignedDate)}</td>
-                                    <td>{formatDate(hw.dueDate)}</td>
-                                    <td>{hw.posted ? "Posted" : "Draft"}</td>
-                                    <td onClick={(e) => e.stopPropagation()}>
-                                      <button
-                                        className={`post-btn ${hw.posted ? 'posted' : 'draft'}`}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleTogglePost(course.id, hwIndex);
-                                        }}
-                                      >
-                                        {hw.posted ? "Unpost" : "Post"}
-                                      </button>
-                                    </td>
-                                    <td onClick={(e) => e.stopPropagation()}>
-                                      <button
-                                        className="delete-btn"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeleteAssignment(course.id, hwIndex);
-                                        }}
-                                      >
-                                        ×
-                                      </button>
-                                    </td>
-                                  </tr>
-                                ))}
+                                    {hw.locked ? "Unlock" : "Lock"}
+                                  </button>
+                                </td>
+                                <td onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className={`post-btn ${hw.posted ? 'posted' : 'draft'}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTogglePost(course.id, hw.id);
+                                    }}
+                                  >
+                                    {hw.posted ? "Unpost" : "Post"}
+                                  </button>
+                                </td>
+                                <td onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    className="delete-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteAssignment(course.id, hw.id);
+                                    }}
+                                  >
+                                    ×
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
                               </tbody>
                             </table>
                           </div>
