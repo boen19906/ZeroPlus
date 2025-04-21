@@ -1,79 +1,78 @@
 .packages-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-}
-
-.package-box {
-    background: #f8f9fa;
-    border-radius: 12px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease; /* Smoothed the transition */
-    border: 2px solid #e9ecef;
-    padding: 1.2rem;
-    position: relative;
-}
-
-.package-box:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* New styles for selected package */
-.package-box.selected {
-    transform: scale(1.05);
-    border-color: #4285f4;
-    box-shadow: 0 6px 18px rgba(66, 133, 244, 0.2);
-    background-color: #f0f7ff;
-}
-
-/* Selection indicator */
-.package-box.selected::after {
-    content: "✓";
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #4285f4;
-    color: white;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
     display: flex;
-    align-items: center;
+    gap: 2rem;
     justify-content: center;
-    font-size: 14px;
-}
-
-/* Style for select package button */
-.select-package-btn {
-    margin-top: 1.5rem;
-    padding: 0.8rem 1.5rem;
-    background-color: #4285f4;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-weight: 600;
+    align-items: stretch;
+    padding: 2rem;
+    flex-wrap: wrap;
+  }
+  
+  .package-box {
+    background-color: #f9f9f9;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 300px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
     cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.select-package-btn:hover {
-    background-color: #3367d6;
-}
-
-.select-package-btn:disabled {
-    background-color: #cccccc;
-    cursor: not-allowed;
-}
-
-.join-class-section {
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e9ecef;
-}
-
-.join-class-section button {
+    text-align: center;
+    flex: 1 1 300px;
+  }
+  
+  .package-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .package-box.selected {
+    border-color: #007bff;
+    background-color: #e6f0ff;
+  }
+  
+  .package-box h4 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .package-box p {
+    font-size: 1.2rem;
+    font-weight: bold;
     margin-bottom: 1rem;
-}
+    color: #333;
+  }
+  
+  .package-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .package-box li {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+    color: #555;
+  }
+  
+  .select-package-btn {
+    display: block;
+    margin: 2rem auto 0;
+    padding: 0.75rem 2rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .select-package-btn:disabled {
+    background-color: #aaa;
+    cursor: not-allowed;
+  }
+  
+  .select-package-btn:not(:disabled):hover {
+    background-color: #0056b3;
+  }
+  
