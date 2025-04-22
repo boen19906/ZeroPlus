@@ -9,6 +9,7 @@ interface User {
   email?: string;
   phoneNumber?: string;
   admin?: boolean;
+  paid?: boolean;
 }
 
 interface Course {
@@ -64,6 +65,28 @@ const Admin: React.FC = () => {
       alert('Failed to update post status');
     }
   };
+
+  const handleTogglePaid = async (userId: string) => {
+    try {
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) return;
+  
+      const currentPaid = userSnap.data()?.paid ?? false;
+      await updateDoc(userRef, { paid: !currentPaid });
+  
+      // Immediately update local state
+      setUsers(prevUsers =>
+        prevUsers.map(user =>
+          user.id === userId ? { ...user, paid: !currentPaid } : user
+        )
+      );
+    } catch (err) {
+      console.error('Error toggling paid status:', err);
+      alert('Failed to update paid status');
+    }
+  };
+  
 
   const handleToggleLock = async (courseId: string, hwId: string) => {
     try {
@@ -229,26 +252,35 @@ const Admin: React.FC = () => {
       <h1 className="admin-header">Admin Dashboard</h1>
 
       {/* Users Table */}
-      <div className="table-section">
+      <div className="table-section ">
         <h2>Users</h2>
-        <div className="table-container">
+        <div className="table-container users-table">
           <table className="data-table">
             <thead>
               <tr>
                 <th>Email</th>
                 <th>Phone</th>
                 <th>UID</th>
+                <th>Mark Paid</th>
               </tr>
             </thead>
             <tbody>
-              {users.map(user => (
-                <tr key={user.id}>
-                  <td>{user.email || 'N/A'}</td>
-                  <td>{user.phoneNumber || 'N/A'}</td>
-                  <td className="uid">{user.id}</td>
-                </tr>
-              ))}
+              {users
+                .filter(user => !user.admin) // ⬅️ filters out admin users
+                .map(user => (
+                  <tr key={user.id}>
+                    <td>{user.email || 'N/A'}</td>
+                    <td>{user.phoneNumber || 'N/A'}</td>
+                    <td className="uid">{user.id}</td>
+                    <td>
+                      <button className="mark-paid-btn" onClick={() => handleTogglePaid(user.id)}>
+                        {user.paid ? 'Unmark Paid' : 'Mark Paid'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
+
           </table>
         </div>
       </div>
@@ -309,7 +341,7 @@ const Admin: React.FC = () => {
                           >
                             Create Draft
                           </button>
-                          <div className="table-container">
+                          <div className="table-container lessons-table">
                             <table className="data-table">
                               <thead>
                                 <tr>

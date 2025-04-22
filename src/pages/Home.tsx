@@ -1,9 +1,9 @@
 import { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../firebase";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, getDoc } from "firebase/firestore";
 import "./Home.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useScrollToTop from "../hooks/useScroll";
 import { useAdmin } from "../hooks/useAdmin"; // Make sure to create this file in the hooks directory
 
@@ -12,9 +12,28 @@ const Home = ({ user: propUser }: { user: User | null }) => {
   useScrollToTop();
   const navigate = useNavigate();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [paid, setPaid] = useState<boolean>(false);
+
   
   // Use the custom hook instead of the useEffect
   const { isAdmin, loading, user } = useAdmin(auth, db);
+
+  useEffect(() => {
+    const fetchPaidStatus = async () => {
+      if (!user?.uid) return;
+  
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+  
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        setPaid(data.paid ?? false); // default to false if undefined
+      }
+    };
+  
+    fetchPaidStatus();
+  }, [user]);
+  
 
   const handlePackageSelect = (packageName: string) => {
     setSelectedPackage(packageName);
@@ -68,7 +87,7 @@ const Home = ({ user: propUser }: { user: User | null }) => {
             <p>Loading...</p>
           ) : (
             <>
-              {isAdmin === false && (
+              {isAdmin === false && paid === false && (
                 <>
                   <div className="packages-grid">
                     <div 
@@ -106,16 +125,18 @@ const Home = ({ user: propUser }: { user: User | null }) => {
                     {selectedPackage ? `Select ${selectedPackage.charAt(0).toUpperCase() + selectedPackage.slice(1)} Package` : "Select a Package"}
                   </button>
 
+                  
+                </>
+              )}
+              
+              {isAdmin === false && paid === true && (
+                <>
+
                   <div className="join-class-section">
                     <h2>Join Class</h2>
                     <p>Join the class to start your journey to success</p>
                     <button onClick={handleJoinClass}>Join Class</button>
                   </div>
-                </>
-              )}
-              
-              {isAdmin === false && (
-                <>
                   <hr/>
                   <div className="homework-section">
                     <h2>Homework</h2>
