@@ -61,7 +61,8 @@ const SignUp = () => {
       await setDoc(doc(db, "users", user.uid), {
         email: formData.email,
         phoneNumber: formData.phoneNumber,
-        admin: false
+        admin: false,
+        paid: false
       });
 
       // Redirect to home page

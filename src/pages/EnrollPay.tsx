@@ -1,7 +1,8 @@
 import { User } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, storage } from "../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import "./EnrollPay.css"; // Regular CSS import
 
 interface UserData {
@@ -61,14 +62,24 @@ const EnrollPay: React.FC<{ user: User | null }> = ({ user }) => {
   const handleSave = async () => {
     setIsSubmitted(true);
     if (!user) return;
-
+  
     try {
+      let downloadURL = null;
+  
+      // ⬇️ If a new image is selected, upload it
+      if (profileImageFile) {
+        const storageRef = ref(storage, `profileImages/${user.uid}`);
+        await uploadBytes(storageRef, profileImageFile);
+        downloadURL = await getDownloadURL(storageRef);
+      }
+  
       const userDocRef = doc(db, "users", user.uid);
       await updateDoc(userDocRef, {
         phoneNumber: userData.phoneNumber,
         zalo: userData.zalo,
-        // profileImage: downloadURL (after storage upload)
+        ...(downloadURL && { profileImage: downloadURL }) // only set if image uploaded
       });
+  
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -130,8 +141,15 @@ const EnrollPay: React.FC<{ user: User | null }> = ({ user }) => {
           </label>
         </div>
 
+        <div className="qr-code-container">
+          <img src="/qrcode.png" alt="QR Code" className="qr-code" />
+          <label className="qr-code-label">Zalo QR Code</label>
+        </div>
+
+
+
         <button onClick={handleSave} className="save-button">
-          Enroll and Pay
+          Enroll
         </button>
       </div>
       ) : (

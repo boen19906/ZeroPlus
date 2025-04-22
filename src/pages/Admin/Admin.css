@@ -22,12 +22,23 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
   }
+
+  .table-container.users-table {
+    overflow-y: auto;
+    max-height: 300px;
+  }
+
+  .table-container.lessons-table {
+    overflow-y: auto;
+    max-height: 500px;
+  }
   
   .data-table {
     width: 100%;
     border-collapse: collapse;
     min-width: 600px;
   }
+  
   
   .data-table th {
     background-color: #007bff;

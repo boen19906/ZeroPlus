@@ -122,3 +122,22 @@
   .enroll-pay-form h2 {
     color: #28a745;
   }
+
+  .qr-code-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .qr-code {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .qr-code-label {
+    margin-top: 8px;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+  
