@@ -2,13 +2,13 @@ import { useState } from 'react';
 
 // Define types
 export interface QuizQuestion {
-  id: string | number;
-  correctAnswer: string;
-  text: string;
-  options?: Array<{
-    value: string;
-    text: string;
-  }>;
+  id: string | number;  // Unique identifier for the question
+  type: 'multiple_choice' | 'short_answer' | 'file_upload';
+  question: string;
+  options?: string[];  // For multiple choice questions
+  correctAnswer?: string;  // For multiple choice and short answer questions
+  allowedFileTypes?: string[];  // For file upload questions
+  points: number;
 }
 
 interface SelectedAnswers {

@@ -1,20 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, runTransaction } from 'firebase/firestore'; // Import runTransaction
+import { doc, getDoc, runTransaction } from 'firebase/firestore';
 import { auth, db, storage } from '../../firebase';
 import { Timestamp } from 'firebase/firestore';
 import './Assignment.css';
 import { useAdmin } from '../../hooks/useAdmin';
-import Homework, { Submission } from './Homework';
+import Homework from './Homework';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 
+// Define the quiz question interface
+interface QuizQuestion {
+  type: 'multiple_choice' | 'short_answer' | 'file_upload';
+  question: string;
+  options?: string[]; // For multiple choice questions
+  correctAnswer?: string; // For multiple choice and short answer questions
+  allowedFileTypes?: string[]; // For file upload questions
+  points: number;
+}
+
+// Define the quiz submission interface
+interface QuizSubmission {
+  questionId: number;
+  answer?: string; // For multiple choice and short answer
+  fileURL?: string; // For file upload
+  originalFilename?: string; // For file upload
+  isCorrect?: boolean; // For multiple choice
+}
 
 
 const Assignment: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [assignment, setAssignment] = useState<Homework | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<{[key: number]: File | null}>({});
+  const [answers, setAnswers] = useState<{[key: number]: string}>({});
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,66 +41,140 @@ const Assignment: React.FC = () => {
   const currentUser = auth.currentUser;
   const currentUserId = currentUser?.uid;
 
-  
+  // Handle file changes for specific question
+  const handleFileChange = (questionId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFiles(prev => ({
+        ...prev,
+        [questionId]: e.target.files?.[0] || null
+      }));
+    }
+  };
 
+  // Handle answer changes for multiple choice or short answer questions
+  const handleAnswerChange = (questionId: number, value: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
+  // Handle form submission
   const handleSubmit = async () => {
-    if (!selectedFile || !currentUser) {
-      setError('Please select a file to upload.');
+    if (!currentUser) {
+      setError('You must be logged in to submit.');
       return;
     }
-
+  
     try {
       const courseId = '9MPz8i5c4izfgxrapfc7';
+      const quizSubmissions: QuizSubmission[] = [];
       
-      // Upload to Storage
-      const storageRef = ref(storage, `submissions/${currentUserId}/${id}/${selectedFile.name}`);
-      const snapshot = await uploadBytes(storageRef, selectedFile, {
-        contentType: selectedFile.type,
-      });
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      // Update Firestore
+      // Track correct answers
+      let correctCount = 0;
+      let totalMultipleChoice = 0;
+      
+      // Process each question's answer
+      if (assignment?.quiz) {
+        for (let i = 0; i < assignment.quiz.length; i++) {
+          const question = assignment.quiz[i];
+          const questionSubmission: QuizSubmission = { questionId: i };
+          
+          if (question.type === 'file_upload') {
+            const file = selectedFiles[i];
+            if (!file) {
+              setError(`Please select a file for question ${i + 1}.`);
+              return;
+            }
+            
+            // Upload file to storage
+            const storageRef = ref(storage, `submissions/${currentUserId}/${id}/${i}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file, {
+              contentType: file.type,
+            });
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            
+            questionSubmission.fileURL = downloadURL;
+            questionSubmission.originalFilename = file.name;
+          } else {
+            // For multiple choice and short answer
+            const answer = answers[i];
+            if (!answer) {
+              setError(`Please provide an answer for question ${i + 1}.`);
+              return;
+            }
+            questionSubmission.answer = answer;
+            
+            // Check if multiple choice answer is correct
+            if (question.type === 'multiple_choice' && question.correctAnswer) {
+              totalMultipleChoice++;
+              if (answer === question.correctAnswer) {
+                correctCount++;
+                questionSubmission.isCorrect = true;
+              } else {
+                questionSubmission.isCorrect = false;
+              }
+            }
+          }
+          
+          quizSubmissions.push(questionSubmission);
+        }
+      }
+  
+      // Update Firestore with all submissions
       const courseRef = doc(db, 'courses', courseId);
       
       await runTransaction(db, async (transaction) => {
         const courseSnap = await transaction.get(courseRef);
         if (!courseSnap.exists()) throw new Error('Course not found');
-
+  
         const homeworkArray = courseSnap.data().homework || [];
         const homeworkIndex = homeworkArray.findIndex((hw: any) => hw.id === id);
         if (homeworkIndex === -1) throw new Error('Homework not found');
-
+  
         const updatedHomework = [...homeworkArray];
-        const newSubmission: Submission = {
+        
+        // Create the submission object with score data
+        const submissionData = {
           userId: currentUserId ? currentUserId : '',
-          fileURL: downloadURL,
-          originalFilename: selectedFile.name,
-          timestamp: Timestamp.now()
+          quizAnswers: quizSubmissions,
+          timestamp: Timestamp.now(),
+          score: {
+            correct: correctCount,
+            total: totalMultipleChoice,
+            percentage: totalMultipleChoice > 0 ? Math.round((correctCount / totalMultipleChoice) * 100) : 0
+          }
         };
-
+  
         // Update or add submission
-        const existingSubmissionIndex = updatedHomework[homeworkIndex].submittedFiles?.findIndex((s: { userId: string; }) => s.userId === currentUserId) ?? -1;
+        const existingSubmissionIndex = updatedHomework[homeworkIndex].submittedFiles?.findIndex(
+          (s: { userId: string; }) => s.userId === currentUserId
+        ) ?? -1;
         
         if (existingSubmissionIndex >= 0) {
           // Update existing submission
-          updatedHomework[homeworkIndex].submittedFiles[existingSubmissionIndex] = newSubmission;
+          updatedHomework[homeworkIndex].submittedFiles[existingSubmissionIndex] = {
+            ...updatedHomework[homeworkIndex].submittedFiles[existingSubmissionIndex],
+            ...submissionData
+          };
         } else {
           // Add new submission
           updatedHomework[homeworkIndex].submittedFiles = [
             ...(updatedHomework[homeworkIndex].submittedFiles || []),
-            newSubmission
+            submissionData
           ];
         }
         
-        // Append/update the "submitted" map to mark this user's submission status as true
+        // Mark as submitted
         updatedHomework[homeworkIndex].submitted = {
-          ...updatedHomework[homeworkIndex].submitted, // Keep existing entries
-          [currentUserId ?? '']: true, // Add/update the current user
+          ...updatedHomework[homeworkIndex].submitted,
+          [currentUserId ?? '']: true,
         };
-
+  
         transaction.update(courseRef, { homework: updatedHomework });
       });
-
+  
+      // Fetch the updated assignment data
       const courseDoc = await getDoc(doc(db, 'courses', courseId));
       const updatedHomework = courseDoc.data()?.homework || [];
       const updatedAssignment = updatedHomework.find((hw: Homework) => hw.id === id);
@@ -90,10 +183,11 @@ const Assignment: React.FC = () => {
       setError(null);
     } catch (error) {
       console.error('Submission failed:', error);
-      setError(`Upload failed: ${(error as Error).message}`);
+      setError(`Submission failed: ${(error as Error).message}`);
     }
   };
 
+  // Fetch assignment data
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
@@ -127,13 +221,30 @@ const Assignment: React.FC = () => {
           };
   
           setAssignment(assignmentWithTimestamps);
+          
           // Check if current user has submitted
           const userSubmissionStatus = currentUserId
-          ? assignmentWithTimestamps.submitted?.[currentUserId] ?? false 
-          : false;
-
-          
+            ? assignmentWithTimestamps.submitted?.[currentUserId] ?? false 
+            : false;
           setSubmitted(!!userSubmissionStatus);
+          
+          // If user has already submitted, fetch and populate their answers
+          if (userSubmissionStatus && currentUserId) {
+            const userSubmission = assignmentWithTimestamps.submittedFiles?.find(
+              (s: { userId: string; }) => s.userId === currentUserId
+            );
+            
+            if (userSubmission?.quizAnswers) {
+              // Populate answers state
+              const answerMap: {[key: number]: string} = {};
+              userSubmission.quizAnswers.forEach((qa: QuizSubmission) => {
+                if (qa.answer) {
+                  answerMap[qa.questionId] = qa.answer;
+                }
+              });
+              setAnswers(answerMap);
+            }
+          }
         } else {
           navigate('/error');
         }
@@ -145,168 +256,284 @@ const Assignment: React.FC = () => {
     };
 
     fetchAssignment();
-  }, [id, navigate, currentUser]);
+  }, [id, navigate, currentUserId]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedFile(e.target.files?.[0] || null);
+  // Render quiz questions
+  const renderQuizQuestion = (question: QuizQuestion, index: number) => {
+    switch (question.type) {
+      case 'multiple_choice':
+        return (
+          <div className="quiz-question multiple-choice" key={index}>
+            <h3>Question {index + 1} <span className="points">({question.points} points)</span></h3>
+            <p>{question.question}</p>
+            <div className="options">
+              {question.options?.map((option, optionIndex) => (
+                <div className="option" key={optionIndex}>
+                  <input
+                    type="radio"
+                    id={`q${index}-o${optionIndex}`}
+                    name={`question-${index}`}
+                    value={option}
+                    checked={answers[index] === option}
+                    onChange={() => handleAnswerChange(index, option)}
+                    disabled={submitted}
+                  />
+                  <label htmlFor={`q${index}-o${optionIndex}`}>{option}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      
+      case 'short_answer':
+        return (
+          <div className="quiz-question short-answer" key={index}>
+            <h3>Question {index + 1} <span className="points">({question.points} points)</span></h3>
+            <p>{question.question}</p>
+            <textarea
+              value={answers[index] || ''}
+              onChange={(e) => handleAnswerChange(index, e.target.value)}
+              disabled={submitted}
+              placeholder="Your answer here..."
+              rows={4}
+            />
+          </div>
+        );
+      
+      case 'file_upload':
+        return (
+          <div className="quiz-question file-upload" key={index}>
+            <h3>Question {index + 1} <span className="points">({question.points} points)</span></h3>
+            <p>{question.question}</p>
+            {submitted ? (
+              <p>File submitted: {
+                assignment?.submittedFiles?.find(s => s.userId === currentUserId)?.quizAnswers?.[index]?.originalFilename || 'No file'
+              }</p>
+            ) : (
+              <div className="upload-box" onClick={() => document.getElementById(`file-upload-${index}`)?.click()}>
+                <svg className="file-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="9" y1="15" x2="15" y2="15"></line>
+                  <line x1="9" y1="11" x2="15" y2="11"></line>
+                </svg>
+                <p className="upload-text">Click to upload a file</p>
+                <input 
+                  id={`file-upload-${index}`}
+                  type="file" 
+                  onChange={(e) => handleFileChange(index, e)} 
+                  required 
+                  accept={question.allowedFileTypes?.join(',')}
+                />
+                {selectedFiles[index] && <p className="selected-file">{selectedFiles[index]?.name}</p>}
+              </div>
+            )}
+            {question.allowedFileTypes && (
+              <p className="file-types">Allowed file types: {question.allowedFileTypes.join(', ')}</p>
+            )}
+          </div>
+        );
+
+      default:
+        return <div>Unknown question type</div>;
+    }
   };
 
-  if (loading) return <div>Loading...</div>;
+  const renderAdminSubmissions = () => {
+    if (!assignment?.submittedFiles || assignment.submittedFiles.length === 0) {
+      return <p>No submissions yet</p>;
+    }
+  
+    return (
+      <div className="admin-submissions">
+        {assignment.submittedFiles.map((submission, index) => (
+          <details key={index} className="submission-details">
+            <summary>
+              <strong>User:</strong> {submission.userId} - 
+              <span className="submission-date">
+                {submission.timestamp?.toDate?.().toLocaleString() || 'Unknown date'}
+              </span>
+              {submission.score && (
+                <span className="submission-score">
+                  Score: {submission.score.correct}/{submission.score.total} ({submission.score.percentage}%)
+                </span>
+              )}
+            </summary>
+            <div className="submission-answers">
+              {submission.quizAnswers?.map((answer: { questionId: number; isCorrect: undefined; fileURL: string | undefined; originalFilename: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; answer: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, answerIndex: React.Key | null | undefined) => {
+                const question = assignment.quiz?.[answer.questionId];
+                if (!question) return null;
+                
+                return (
+                  <div key={answerIndex} className={`answer-item ${answer.isCorrect !== undefined ? (answer.isCorrect ? 'correct' : 'incorrect') : ''}`}>
+                    <h4>Question {answer.questionId + 1}: {question.question}</h4>
+                    {question.type === 'file_upload' ? (
+                      <p>
+                        <strong>File:</strong> <a href={answer.fileURL}>{answer.originalFilename}</a>
+                      </p>
+                    ) : (
+                      <>
+                        <p><strong>Answer:</strong> {answer.answer}</p>
+                        {question.correctAnswer && (
+                          <p><strong>Correct Answer:</strong> {question.correctAnswer}</p>
+                        )}
+                        {answer.isCorrect !== undefined && (
+                          <div className={`answer-status ${answer.isCorrect ? 'correct' : 'incorrect'}`}>
+                            {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </details>
+        ))}
+      </div>
+    );
+  };
+
+  //Add this to the student view when quiz is submitted
+const renderStudentScore = () => {
+  if (!submitted || !currentUserId) return null;
+  
+  const userSubmission = assignment?.submittedFiles?.find(s => s.userId === currentUserId);
+  if (!userSubmission || !userSubmission.score) return null;
+  
+  return (
+    <div className="student-score">
+      <h3>Your Score</h3>
+      <p className="score-display">
+        You answered {userSubmission.score.correct} out of {userSubmission.score.total} multiple choice questions correctly.
+        <span className="score-percentage">Score: {userSubmission.score.percentage}%</span>
+      </p>
+    </div>
+  );
+};
+
+  if (loading) return <div className="loading">Loading...</div>;
 
   return (
     <div className="assignment-container">
       <h1>{assignment?.name}</h1>
       
-      {/* Submission status for students */}
-      {submitted && !isAdmin && (
-        <>
-          <h3>Assignment Submitted</h3>
-          <p>
-            File Submitted: {decodeURIComponent(
-              assignment?.submittedFiles
-                ?.find((s: Submission) => s.userId === currentUserId)
-                ?.fileURL.split('%2F').pop()
-                ?.split('?')[0] || 'Download File'
-            )}
-          </p>
-        </>
-      )}
-  
-      {/* Assignment details with admin editing */}
-      {assignment && !submitted && (
-        <div className="assignment-info">
-          {isAdmin ? (
-            <div className="admin-editor">
-              <div className="form-group">
-                <label>Description:</label>
-                <textarea
-                  value={assignment.assignmentDescription}
-                  onChange={(e) => setAssignment({
-                    ...assignment,
-                    assignmentDescription: e.target.value
-                  })}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label>Due Date:</label>
-                <input
-                  type="datetime-local"
-                  value={assignment.dueDate.toDate().toISOString().slice(0, 16)}
-                  onChange={(e) => setAssignment({
-                    ...assignment,
-                    dueDate: Timestamp.fromDate(new Date(e.target.value))
-                  })}
-                />
-              </div>
-              
-              <button 
-                className="save-button"
-                onClick={async () => {
-                  try {
-                    const courseId = '9MPz8i5c4izfgxrapfc7';
-                    const courseRef = doc(db, 'courses', courseId);
-                    
-                    await runTransaction(db, async (transaction) => {
-                      const courseSnap = await transaction.get(courseRef);
-                      const homeworkArray = courseSnap.data()?.homework || [];
-                      const index = homeworkArray.findIndex((hw: Homework) => hw.id === id);
-                      
-                      if (index >= 0) {
-                        homeworkArray[index] = {
-                          ...homeworkArray[index],
-                          assignmentDescription: assignment.assignmentDescription,
-                          dueDate: assignment.dueDate
-                        };
-                        transaction.update(courseRef, { homework: homeworkArray });
-                      }
-                    });
-                    
-                    setError(null);
-                  } catch (error) {
-                    setError(`Failed to save changes: ${(error as Error).message}`);
-                  }
-                }}
-              >
-                Save Changes
-              </button>
+      {/* Assignment details */}
+      <div className="assignment-info">
+        {isAdmin ? (
+          <div className="admin-editor">
+            <div className="form-group">
+              <label>Description:</label>
+              <textarea
+                value={assignment?.assignmentDescription || ''}
+                onChange={(e) => setAssignment(assignment ? {
+                  ...assignment,
+                  assignmentDescription: e.target.value
+                } : null)}
+              />
             </div>
+            
+            <div className="form-group">
+              <label>Due Date:</label>
+              <input
+                type="datetime-local"
+                value={assignment?.dueDate?.toDate().toISOString().slice(0, 16) || ''}
+                onChange={(e) => setAssignment(assignment ? {
+                  ...assignment,
+                  dueDate: Timestamp.fromDate(new Date(e.target.value))
+                } : null)}
+              />
+            </div>
+            
+            <button 
+              className="save-button"
+              onClick={async () => {
+                try {
+                  if (!assignment) return;
+                  const courseId = '9MPz8i5c4izfgxrapfc7';
+                  const courseRef = doc(db, 'courses', courseId);
+                  
+                  await runTransaction(db, async (transaction) => {
+                    const courseSnap = await transaction.get(courseRef);
+                    const homeworkArray = courseSnap.data()?.homework || [];
+                    const index = homeworkArray.findIndex((hw: Homework) => hw.id === id);
+                    
+                    if (index >= 0) {
+                      homeworkArray[index] = {
+                        ...homeworkArray[index],
+                        assignmentDescription: assignment.assignmentDescription,
+                        dueDate: assignment.dueDate
+                      };
+                      transaction.update(courseRef, { homework: homeworkArray });
+                    }
+                  });
+                  
+                  setError(null);
+                } catch (error) {
+                  setError(`Failed to save changes: ${(error as Error).message}`);
+                }
+              }}
+            >
+              Save Changes
+            </button>
+          </div>
+        ) : (
+          /* Student view */
+          <>
+            <p><strong>Description:</strong> {assignment?.assignmentDescription}</p>
+            <p><strong>Assigned Date:</strong> 
+              {assignment?.assignedDate?.toDate().toLocaleDateString()}
+            </p>
+            <p><strong>Due Date:</strong> 
+              {assignment?.dueDate?.toDate().toLocaleDateString()}
+            </p>
+          </>
+        )}
+      </div>
+      
+      {/* Quiz section for students */}
+      {!isAdmin && (
+        <div className="quiz-container">
+          <h2>Quiz Questions</h2>
+          {assignment?.quiz?.length === 0 ? (
+            <p>No quiz questions available for this assignment.</p>
           ) : (
-            /* Student view */
             <>
-              <p><strong>Description:</strong> {assignment.assignmentDescription}</p>
-              <p><strong>Assigned Date:</strong> 
-                {assignment.assignedDate?.toDate().toLocaleDateString()}
-              </p>
-              <p><strong>Due Date:</strong> 
-                {assignment.dueDate?.toDate().toLocaleDateString()}
-              </p>
+              <div className="quiz-questions">
+                {assignment?.quiz?.map((question, index) => 
+                  renderQuizQuestion(question, index)
+                )}
+              </div>
+              
+              {!submitted && (
+                <>
+                  {error && <p className="error-message">{error}</p>}
+                  <button onClick={handleSubmit} className="submit-button">Submit Answers</button>
+                </>
+              )}
+              
+              {submitted && (
+                <div className="submission-success">
+                  <h3>Assignment Submitted</h3>
+                  <p>Your answers have been recorded.</p>
+                  {renderStudentScore()}
+                </div>
+
+              )}
             </>
           )}
         </div>
       )}
-  
-      {/* Student submission form */}
-      {!submitted && !isAdmin && (
-        <>
-          <form className="upload-form">
-            <h2>File Submission</h2>
-            <div className="upload-box" onClick={() => document.getElementById('file-upload')?.click()}>
-            <svg className="file-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="9" y1="15" x2="15" y2="15"></line>
-            <line x1="9" y1="11" x2="15" y2="11"></line>
-            </svg>
-            <p className="upload-text">Click to upload a file</p>
-            <input 
-            id="file-upload"
-            type="file" 
-            onChange={handleFileChange} 
-            required 
-            />
-            {selectedFile && <p className="selected-file">{selectedFile.name}</p>}
-        </div>
-          </form>
-          {error && <p className="error-message">{error}</p>}
-          <button onClick={handleSubmit} type="submit">Upload Submission</button>
-        </>
-      )}
-  
-      {/* Admin submissions list */}
+      
+      {/* Admin submissions view */}
       {isAdmin && (
-        <>
-          <h2>Current Submissions</h2>
-          {!assignment ? (
-            <p className="loading-message">
-              <div className="loading-spinner"></div>
-              Loading submissions...
-            </p>
-          ) : assignment.submittedFiles?.length === 0 ? (
-            <p>No submissions yet</p>
-          ) : (
-            assignment.submittedFiles?.map((s: Submission) => (
-            <div key={s.userId} className="submission-item">
-              <p>User: {s.userId}</p>
-              <p>
-                File: <a href={s.fileURL}>
-                  {decodeURIComponent(
-                    s.fileURL.split('%2F').pop()?.split('?')[0] || 'Unnamed File'
-                  )}
-                </a>
-              </p>
-              <p>
-                Submitted: {s.timestamp?.toDate?.().toLocaleString() || 'Unknown date'}
-              </p>
-            </div>
-            ))
-          )}
-        </>
+        <div className="admin-view">
+          <h2>Student Submissions</h2>
+          {renderAdminSubmissions()}
+        </div>
       )}
     </div>
   );
 }
-
-
 
 export default Assignment;

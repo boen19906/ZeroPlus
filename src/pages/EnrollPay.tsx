@@ -155,6 +155,7 @@ const EnrollPay: React.FC<{ user: User | null }> = ({ user }) => {
       ) : (
         <div className="enroll-pay-form">
           <h2>Thanks for your payment!</h2>
+          <p>Your courses will be unlocked once your payment is processed!</p>
         </div>
       )}
     </div>

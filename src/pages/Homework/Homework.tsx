@@ -4,6 +4,7 @@ import { auth, db } from "../../firebase"; // Adjust your firebase import path
 import "./Homework.css";
 import { useNavigate } from "react-router-dom";
 import generateHomeworkId from "../../hooks/useId";
+import { QuizQuestion } from "../../hooks/useQuiz";
 
 
 export interface Submission {
@@ -23,7 +24,8 @@ interface Homework {
   id: string;
   submitted: { [userId: string]: boolean };
   locked: boolean;
-  submittedFiles?: Submission[];
+  submittedFiles?: any[];
+  quiz: QuizQuestion[]
 }
 
 interface LocalHomework extends Homework {
@@ -105,7 +107,6 @@ const Homework = () => {
         const homeworkData = courseData.homework || [];
         
         // Filter homework that is posted AND due date has not passed
-        const currentDate = new Date();
         const filteredHomework = homeworkData.filter(
           (h: Homework) => h.posted === true && 
                            (!h.dueDate || !isDatePassed(h.dueDate))
