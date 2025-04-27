@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayRemove, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayRemove } from 'firebase/firestore';
 import './Admin.css';
 import { useNavigate } from 'react-router-dom';
 import Homework from '../Homework/Homework';
@@ -421,6 +421,15 @@ const Admin: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="table-section">
+        <h2>Quiz Management</h2>
+        <div className="quiz-actions">
+          <button onClick={() => navigate('/admin/quiz-manager')} className="create-quiz-btn">
+            Create New Quiz
+          </button>
         </div>
       </div>
     </div>

@@ -1,19 +1,220 @@
 .assignment-container {
-    padding: 20px;
-    max-width: 800px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 40px 20px;
+    background-color: var(--background-primary);
+    min-height: 100vh;
+    color: var(--text-primary);
+}
+
+.assignment-header {
+    text-align: center;
+    margin-bottom: 40px;
+    animation: fadeIn 0.5s ease;
+}
+
+.assignment-header h1 {
+    color: var(--text-primary);
+    font-size: 2.5rem;
+    margin-bottom: 15px;
 }
 
 .assignment-info {
-    background: #f5f5f5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
     padding: 20px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
+    animation: slideUp 0.5s ease;
+}
+
+.due-date {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.status-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+    background-color: var(--accent-color);
+    color: var(--background-primary);
+}
+
+.status-badge.submitted {
+    background-color: black;
+}
+
+.status-badge.pending {
+    background-color: #666;
+}
+
+.status-badge.overdue {
+    background-color: #333;
+}
+
+.assignment-content {
+    background-color: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    padding: 30px;
     margin-bottom: 30px;
 }
 
-.assignment-info p {
-    font-size: 16px;
-    margin: 10px 0;
+.question-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+}
+
+.question-section:hover {
+    transform: translateY(-2px);
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.question-text {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    line-height: 1.6;
+}
+
+.points {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.answer-section {
+    margin-top: 20px;
+}
+
+.answer-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.answer-input:focus {
+    outline: none;
+    border-color: black;
+}
+
+.file-upload {
+    margin-top: 20px;
+}
+
+.file-upload-button {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.file-upload-button:hover {
+    background-color: #333;
+}
+
+.file-info {
+    margin-top: 10px;
+    color: black;
+}
+
+.submit-section {
+    margin-top: 40px;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+.submit-button {
+    padding: 12px 30px;
+    background-color: black;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+.submit-button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.feedback-section {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+}
+
+.feedback-text {
+    color: black;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .assignment-container {
+        padding: 20px 15px;
+    }
+
+    .assignment-header h1 {
+        font-size: 2rem;
+    }
+
+    .assignment-info {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+
+    .submit-button {
+        width: 100%;
+    }
 }
 
 .upload-form {
@@ -177,18 +378,6 @@
     color: #666;
   }
   
-  /* Add some responsive design */
-  @media (max-width: 768px) {
-    .assignment-container {
-      padding: 1rem;
-    }
-    
-    .submission-item {
-      padding: 1rem;
-      margin: 0.75rem 0;
-    }
-  }
-
   /* Loading spinner */
 .loading-spinner {
     display: inline-block;

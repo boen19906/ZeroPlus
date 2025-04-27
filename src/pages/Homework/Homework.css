@@ -3,13 +3,15 @@
     padding: 2rem;
     max-width: 1200px;
     margin: 0 auto;
+    background-color: var(--background-primary);
+    color: var(--text-primary);
 }
 
 .loading {
     text-align: center;
     padding: 2rem;
     font-size: 1.1em;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .error {
@@ -24,15 +26,15 @@
 }
 
 .table-section h2 {
-    color: #2c3e50;
+    color: var(--text-primary);
     margin-bottom: 1.5rem;
     padding-bottom: 0.75rem;
-    border-bottom: 2px solid #007bff;
+    border-bottom: 2px solid var(--accent-color);
     font-size: 1.5rem;
 }
 
 .table-container {
-    background: #ffffff;
+    background: var(--background-primary);
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
@@ -45,8 +47,8 @@
 }
 
 .data-table th {
-    background-color: #007bff;
-    color: white;
+    background-color: var(--accent-color);
+    color: var(--background-primary);
     padding: 1rem;
     text-align: left;
     font-weight: 600;
@@ -54,12 +56,12 @@
 
 .data-table td {
     padding: 1rem;
-    border-bottom: 1px solid #e9ecef;
-    color: #495057;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
 }
 
 .data-table tr:nth-child(even) {
-    background-color: #f8f9fa;
+    background-color: var(--background-secondary);
 }
 
 .data-table tr:hover {

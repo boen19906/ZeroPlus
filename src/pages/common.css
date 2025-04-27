@@ -1,0 +1,76 @@
+/* Common styles for text and backgrounds */
+:root {
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --background-primary: #ffffff;
+  --background-secondary: #f8f9fa;
+  --accent-color: #007bff;
+  --border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Common text styles */
+.course-title,
+.homework-title,
+.lesson-title {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.course-description,
+.homework-description,
+.lesson-description {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+/* Common container styles */
+.content-container {
+  background-color: var(--background-primary);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+/* Common table styles */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  color: var(--text-primary);
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+  background-color: var(--background-secondary);
+  font-weight: 600;
+}
+
+/* Common status styles */
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 500;
+  color: var(--background-primary);
+}
+
+.status-badge.completed {
+  background-color: #28a745;
+}
+
+.status-badge.in-progress {
+  background-color: var(--accent-color);
+}
+
+.status-badge.pending {
+  background-color: var(--text-secondary);
+} 

@@ -80,7 +80,7 @@ const Course = () => {
   };
 
   return (
-    <div>
+    <div className="course-container">
       <div className="course-welcome-section">
         <h1>Course</h1>
         <h4>Welcome to Financial Literacy Course!</h4>
@@ -90,33 +90,37 @@ const Course = () => {
 
       <div className="lessons-section">
         {loading ? (
-          <p>Loading assignments...</p>
+          <div className="loading-message">
+            Loading your lessons...
+          </div>
         ) : error ? (
-          <p>Error loading assignments: {error}</p>
+          <div className="error-message">
+            {error}
+          </div>
         ) : homework.length > 0 ? (
           <ul>
             {homework.map((hw, index) => {
-            const isSubmitted = currentUserId
-            ? hw.submitted?.[currentUserId] ?? false 
-            : false;
-            const isLocked = hw.locked || false;
-            const isDisabled = isLocked;
+              const isSubmitted = currentUserId
+                ? hw.submitted?.[currentUserId] ?? false 
+                : false;
+              const isLocked = hw.locked || false;
+              const isDisabled = isLocked;
 
-            return (
+              return (
                 <li 
-                key={hw.id}
-                onClick={() => !isDisabled && navigateToAssignment(hw.id)}
-                className={`${index % 2 === 0 ? "" : "even-row"} ${isDisabled ? "disabled-lesson" : ""}`}
+                  key={hw.id}
+                  onClick={() => !isDisabled && navigateToAssignment(hw.id)}
+                  className={`${isDisabled ? "disabled-lesson" : ""}`}
                 >
-                Lesson {index + 1}: {hw.name}
-                {isSubmitted && <span className="submitted-check">✓ Submitted</span>}
-                {isLocked && <span className="locked-check">🔒 Locked</span>}
+                  Lesson {index + 1}: {hw.name}
+                  {isSubmitted && <span className="submitted-check">Submitted</span>}
+                  {isLocked && <span className="locked-check">Locked</span>}
                 </li>
-            );
+              );
             })}
           </ul>
         ) : (
-          <p>No current assignments available.</p>
+          <p>No lessons available at the moment.</p>
         )}
       </div>
     </div>
