@@ -8,6 +8,7 @@ import {
 import SignIn from './pages/SignIn/SignIn';
 import SignUp from './pages/SignIn/SignUp';
 import './App.css';
+import './pages/common.css';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { auth } from './firebase';
@@ -26,6 +27,8 @@ import Admin from './pages/Admin/Admin';
 import Homework from './pages/Homework/Homework';
 import CreateDraft from './pages/Admin/CreateDraft';
 import Assignment from './pages/Homework/Assignment';
+import QuizManager from './pages/Admin/QuizManager';
+
 const AppContent = ({ user }: { user: User | null }) => {
   const location = useLocation();
 
@@ -61,6 +64,7 @@ const AppContent = ({ user }: { user: User | null }) => {
           path="/admin/create-draft/:courseId" 
           element={<CreateDraft />} 
         />
+        <Route path="/admin/quiz-manager" element={<QuizManager />} />
 
         <Route path="/course" element={<Course />}/>
         <Route path="/course/lesson1" element={<Lesson1 />} />
