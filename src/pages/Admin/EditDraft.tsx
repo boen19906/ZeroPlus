@@ -1,5 +1,4 @@
-// Updated CreateDraft.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -29,8 +28,13 @@ interface Homework {
   quiz?: QuizQuestion[]; // Optional quiz field
 }
 
-const CreateDraft: React.FC = () => {
-  const { courseId} = useParams<{ courseId: string}>();
+interface EditDraftProps {
+    courseId: string;
+    isEdit: boolean;
+    homeworkId: string | undefined;
+  }
+
+const EditDraft: React.FC<EditDraftProps> = ({ courseId, isEdit, homeworkId }) => { 
   const [formData, setFormData] = useState({
     name: '',
     dueDate: '',
@@ -44,6 +48,48 @@ const CreateDraft: React.FC = () => {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizData, setQuizData] = useState<QuizQuestion[]>([]);
   const [quizSaved, setQuizSaved] = useState(false);
+  
+
+  // Fetch existing homework data if editing
+  useEffect(() => {
+    const fetchHomeworkData = async () => {
+      if (isEdit && courseId && homeworkId) {
+        try {
+          setLoading(true);
+          const courseRef = doc(db, 'courses', courseId);
+          const courseSnap = await getDoc(courseRef);
+          
+          if (courseSnap.exists()) {
+            const courseData = courseSnap.data();
+            const homework = courseData.homework || [];
+            const homeworkItem = homework.find((hw: Homework) => hw.id === homeworkId);
+            
+            if (homeworkItem) {
+              const dueDate = homeworkItem.dueDate.toDate();
+              const formattedDueDate = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
+              
+              setFormData({
+                name: homeworkItem.name,
+                dueDate: formattedDueDate,
+                assignmentDescription: homeworkItem.assignmentDescription
+              });
+              
+              if (homeworkItem.quiz && homeworkItem.quiz.length > 0) {
+                setQuizData(homeworkItem.quiz);
+                setQuizSaved(true);
+              }
+            }
+          }
+        } catch (err: any) {
+          setError(err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchHomeworkData();
+  }, [isEdit, courseId, homeworkId]);
 
   const createHomeworkId = (hw: Omit<Homework, 'id' | 'posted'>): string => {
     const assignedDateStr = hw.assignedDate.toDate().getTime();
@@ -72,6 +118,11 @@ const CreateDraft: React.FC = () => {
     setShowQuiz(false); // Hide quiz manager after saving
   };
 
+  // Toggle quiz editor visibility
+  const toggleQuizEditor = () => {
+    setShowQuiz(!showQuiz);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -95,37 +146,56 @@ const CreateDraft: React.FC = () => {
       const assignedDate = createLocalDate(formattedToday);
       const dueDate = createLocalDate(formData.dueDate);
 
-      // Create temporary homework object for ID generation
-      const tempHomework = {
-        name: formData.name,
-        assignedDate: Timestamp.fromDate(assignedDate),
-        dueDate: Timestamp.fromDate(dueDate),
-        assignmentDescription: formData.assignmentDescription,
-        submitted: {},
-        locked: true,
-        submittedFiles: []
-      };
+      const courseData = courseSnap.data();
+      const existingHomework = courseData.homework || [];
+      
+      if (isEdit && homeworkId) {
+        // Update existing homework
+        const updatedHomework = existingHomework.map((hw: Homework) => {
+          if (hw.id === homeworkId) {
+            return {
+              ...hw,
+              name: formData.name,
+              dueDate: Timestamp.fromDate(dueDate),
+              assignmentDescription: formData.assignmentDescription,
+              quiz: quizData.length > 0 ? quizData : hw.quiz
+            };
+          }
+          return hw;
+        });
+        
+        await updateDoc(courseRef, { homework: updatedHomework });
+      } else {
+        // Create temporary homework object for ID generation
+        const tempHomework = {
+          name: formData.name,
+          assignedDate: Timestamp.fromDate(assignedDate),
+          dueDate: Timestamp.fromDate(dueDate),
+          assignmentDescription: formData.assignmentDescription,
+          submitted: {},
+          locked: true,
+          submittedFiles: []
+        };
 
-      // Generate unique ID
-      const newHomework: Homework = {
-        ...tempHomework,
-        id: createHomeworkId(tempHomework),
-        posted: false,
-        submitted: {},
-        locked: true,
-        submittedFiles: []
-      };
+        // Generate unique ID
+        const newHomework: Homework = {
+          ...tempHomework,
+          id: createHomeworkId(tempHomework),
+          posted: false,
+          submitted: {},
+          locked: true,
+          submittedFiles: []
+        };
 
-      // Add quiz data if available
-      if (quizData.length > 0) {
-        newHomework.quiz = quizData;
+        // Add quiz data if available
+        if (quizData.length > 0) {
+          newHomework.quiz = quizData;
+        }
+
+        // Update Firestore
+        const updatedHomework = [...existingHomework, newHomework];
+        await updateDoc(courseRef, { homework: updatedHomework });
       }
-
-      // Update Firestore
-      const existingHomework = courseSnap.data().homework || [];
-      const updatedHomework = [...existingHomework, newHomework];
-
-      await updateDoc(courseRef, { homework: updatedHomework });
 
       setSuccess(true);
       setFormData({ name: '', dueDate: '', assignmentDescription: '' });
@@ -141,7 +211,6 @@ const CreateDraft: React.FC = () => {
 
   return (
     <div className="enroll-pay-container">
-      <h1 className="enroll-pay-header">Create Homework Draft</h1>
       
       <div className="enroll-pay-form">
         <form onSubmit={handleSubmit}>
@@ -160,15 +229,16 @@ const CreateDraft: React.FC = () => {
           <div className="form-group">
             <label htmlFor="dueDate">Due Date and Time</label>
             <input
-              type="datetime-local"
-              id="dueDate"
-              value={formData.dueDate || ''}
-              onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-              disabled={loading}
-              required
-            />
+                type="datetime-local"
+                id="dueDate"
+                value={formData.dueDate || ''}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                disabled={loading}
+                required
+                />
 
         </div>
+
 
           <div className="form-group">
             <label htmlFor="assignmentDescription">Assignment Description</label>
@@ -183,33 +253,51 @@ const CreateDraft: React.FC = () => {
 
           <div className="quiz-section">
             {!showQuiz && !quizSaved && (
-              <button type="button" onClick={() => setShowQuiz(true)}>Create Quiz</button>
+              <button type="button" onClick={toggleQuizEditor}>
+                {isEdit ? 'Add Quiz' : 'Create Quiz'}
+              </button>
+            )}
+            
+            {!showQuiz && quizSaved && (
+              <div className="quiz-status">
+                <p>Quiz with {quizData.length} questions saved ✓</p>
+                <button type="button" onClick={toggleQuizEditor}>
+                  Edit Quiz
+                </button>
+              </div>
             )}
             
             {showQuiz && (
-              <QuizManager 
-                onSaveQuiz={handleSaveQuiz}
-              />
-            )}
-            
-            {quizSaved && (
-              <div className="quiz-status">
-                <p>Quiz with {quizData.length} questions saved ✓</p>
-                <button type="button" onClick={() => setShowQuiz(true)}>Edit Quiz</button>
-              </div>
+              <>
+                <QuizManager 
+                  onSaveQuiz={handleSaveQuiz}
+                  initialQuizData={quizData}
+                />
+                <button 
+                  type="button" 
+                  className="cancel-button" 
+                  onClick={() => setShowQuiz(false)}
+                >
+                  Cancel
+                </button>
+              </>
             )}
           </div>
 
           {/* Error and success messages */}
           {error && <div className="error">{error}</div>}
-          {success && <div className="success">Draft created successfully!</div>}
+          {success && (
+            <div className="success">
+              {isEdit ? 'Draft updated successfully!' : 'Draft created successfully!'}
+            </div>
+          )}
 
           <button 
             type="submit" 
             className="save-button"
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Create Draft'}
+            {loading ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update Draft' : 'Create Draft')}
           </button>
         </form>
       </div>
@@ -217,4 +305,4 @@ const CreateDraft: React.FC = () => {
   );
 };
 
-export default CreateDraft;
+export default EditDraft;

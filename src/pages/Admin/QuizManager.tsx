@@ -89,11 +89,6 @@ const QuizManager: React.FC<QuizManagerProps> = ({onSaveQuiz }) => {
       }
     }
 
-    if (currentQuestion.type === 'short_answer' && !currentQuestion.correctAnswer?.trim()) {
-      setError('Please enter a correct answer for the short answer question');
-      return;
-    }
-
     if (currentQuestion.type === 'file_upload' && 
         (!currentQuestion.allowedFileTypes || currentQuestion.allowedFileTypes.length === 0)) {
       setError('Please select at least one allowed file type');
@@ -106,9 +101,6 @@ const QuizManager: React.FC<QuizManagerProps> = ({onSaveQuiz }) => {
       points: currentQuestion.points || 1,
       ...(currentQuestion.type === 'multiple_choice' && {
         options: currentQuestion.options,
-        correctAnswer: currentQuestion.correctAnswer
-      }),
-      ...(currentQuestion.type === 'short_answer' && {
         correctAnswer: currentQuestion.correctAnswer
       }),
       ...(currentQuestion.type === 'file_upload' && {
@@ -207,14 +199,6 @@ const QuizManager: React.FC<QuizManagerProps> = ({onSaveQuiz }) => {
           </div>
         )}
 
-        {currentQuestion.type === 'short_answer' && (
-          <input
-            type="text"
-            placeholder="Correct Answer"
-            value={currentQuestion.correctAnswer || ''}
-            onChange={(e) => setCurrentQuestion({ ...currentQuestion, correctAnswer: e.target.value })}
-          />
-        )}
 
         {currentQuestion.type === 'file_upload' && (
           <div className="file-upload-options">
@@ -283,9 +267,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({onSaveQuiz }) => {
                   </ul>
                 </div>
               )}
-              {q.type === 'short_answer' && (
-                <p>Correct Answer: <span className="correct-answer">{q.correctAnswer}</span></p>
-              )}
+              
               {q.type === 'file_upload' && (
                 <p>Allowed Files: {q.allowedFileTypes?.join(', ')}</p>
               )}

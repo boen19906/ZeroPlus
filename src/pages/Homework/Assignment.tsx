@@ -7,6 +7,8 @@ import './Assignment.css';
 import { useAdmin } from '../../hooks/useAdmin';
 import Homework from './Homework';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import CreateDraft from '../Admin/CreateDraft';
+import EditDraft from '../Admin/EditDraft';
 
 // Define the quiz question interface
 interface QuizQuestion {
@@ -24,7 +26,7 @@ interface QuizSubmission {
   answer?: string; // For multiple choice and short answer
   fileURL?: string; // For file upload
   originalFilename?: string; // For file upload
-  isCorrect?: boolean; // For multiple choice
+  isCorrect?: boolean; // For multiple choice and short answer
 }
 
 
@@ -37,9 +39,12 @@ const Assignment: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gradingSuccess, setGradingSuccess] = useState<string | null>(null);
   const { isAdmin } = useAdmin(auth, db);
   const currentUser = auth.currentUser;
   const currentUserId = currentUser?.uid;
+
+  const courseId = '9MPz8i5c4izfgxrapfc7';
 
   // Handle file changes for specific question
   const handleFileChange = (questionId: number, e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +72,6 @@ const Assignment: React.FC = () => {
     }
   
     try {
-      const courseId = '9MPz8i5c4izfgxrapfc7';
       const quizSubmissions: QuizSubmission[] = [];
       
       // Track correct answers
@@ -184,6 +188,87 @@ const Assignment: React.FC = () => {
     } catch (error) {
       console.error('Submission failed:', error);
       setError(`Submission failed: ${(error as Error).message}`);
+    }
+  };
+
+  // New function to mark short answer questions as correct or incorrect
+  const markShortAnswer = async (
+    submissionIndex: number, 
+    questionId: number, 
+    isCorrect: boolean
+  ) => {
+    try {
+      if (!assignment) return;
+      
+      const courseId = '9MPz8i5c4izfgxrapfc7';
+      const courseRef = doc(db, 'courses', courseId);
+      
+      await runTransaction(db, async (transaction) => {
+        const courseSnap = await transaction.get(courseRef);
+        if (!courseSnap.exists()) throw new Error('Course not found');
+        
+        const homeworkArray = courseSnap.data().homework || [];
+        const homeworkIndex = homeworkArray.findIndex((hw: any) => hw.id === id);
+        if (homeworkIndex === -1) throw new Error('Homework not found');
+        
+        const updatedHomework = [...homeworkArray];
+        
+        // Get the current submission
+        const submission = updatedHomework[homeworkIndex].submittedFiles[submissionIndex];
+        const quizAnswers = [...submission.quizAnswers];
+        
+        // Find the answer for this question
+        const answerIndex = quizAnswers.findIndex(a => a.questionId === questionId);
+        if (answerIndex >= 0) {
+          // Update the answer as correct or incorrect
+          quizAnswers[answerIndex] = {
+            ...quizAnswers[answerIndex],
+            isCorrect
+          };
+        }
+        
+        // Recalculate scores
+        let correctCount = 0;
+        let totalQuestions = 0;
+        
+        quizAnswers.forEach(answer => {
+          if (answer.isCorrect !== undefined) {
+            totalQuestions++;
+            if (answer.isCorrect) {
+              correctCount++;
+            }
+          }
+        });
+        
+        // Update the submission with new quiz answers and score
+        updatedHomework[homeworkIndex].submittedFiles[submissionIndex] = {
+          ...submission,
+          quizAnswers,
+          score: {
+            correct: correctCount,
+            total: totalQuestions,
+            percentage: totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0
+          }
+        };
+        
+        transaction.update(courseRef, { homework: updatedHomework });
+      });
+      
+      // Fetch the updated assignment data
+      const courseDoc = await getDoc(doc(db, 'courses', courseId));
+      const updatedHomework = courseDoc.data()?.homework || [];
+      const updatedAssignment = updatedHomework.find((hw: Homework) => hw.id === id);
+      setAssignment(updatedAssignment);
+      setGradingSuccess("Short answer graded successfully");
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setGradingSuccess(null);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('Grading failed:', error);
+      setError(`Grading failed: ${(error as Error).message}`);
     }
   };
 
@@ -346,8 +431,9 @@ const Assignment: React.FC = () => {
   
     return (
       <div className="admin-submissions">
-        {assignment.submittedFiles.map((submission, index) => (
-          <details key={index} className="submission-details">
+        {gradingSuccess && <div className="success-message">{gradingSuccess}</div>}
+        {assignment.submittedFiles.map((submission, subIndex) => (
+          <details key={subIndex} className="submission-details">
             <summary>
               <strong>User:</strong> {submission.userId} - 
               <span className="submission-date">
@@ -360,7 +446,7 @@ const Assignment: React.FC = () => {
               )}
             </summary>
             <div className="submission-answers">
-              {submission.quizAnswers?.map((answer: { questionId: number; isCorrect: undefined; fileURL: string | undefined; originalFilename: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; answer: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; }, answerIndex: React.Key | null | undefined) => {
+              {submission.quizAnswers?.map((answer: QuizSubmission, answerIndex: number) => {
                 const question = assignment.quiz?.[answer.questionId];
                 if (!question) return null;
                 
@@ -382,6 +468,24 @@ const Assignment: React.FC = () => {
                             {answer.isCorrect ? '✓ Correct' : '✗ Incorrect'}
                           </div>
                         )}
+                        
+                        {/* Add grading buttons for short answer questions */}
+                        {question.type === 'short_answer' && (
+                          <div className="grading-buttons">
+                            <button 
+                              className={`grade-button correct ${answer.isCorrect === true ? 'active' : ''}`}
+                              onClick={() => markShortAnswer(subIndex, answer.questionId, true)}
+                            >
+                              Mark Correct
+                            </button>
+                            <button 
+                              className={`grade-button incorrect ${answer.isCorrect === false ? 'active' : ''}`}
+                              onClick={() => markShortAnswer(subIndex, answer.questionId, false)}
+                            >
+                              Mark Incorrect
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -395,22 +499,22 @@ const Assignment: React.FC = () => {
   };
 
   //Add this to the student view when quiz is submitted
-const renderStudentScore = () => {
-  if (!submitted || !currentUserId) return null;
-  
-  const userSubmission = assignment?.submittedFiles?.find(s => s.userId === currentUserId);
-  if (!userSubmission || !userSubmission.score) return null;
-  
-  return (
-    <div className="student-score">
-      <h3>Your Score</h3>
-      <p className="score-display">
-        You answered {userSubmission.score.correct} out of {userSubmission.score.total} multiple choice questions correctly.
-        <span className="score-percentage">Score: {userSubmission.score.percentage}%</span>
-      </p>
-    </div>
-  );
-};
+  const renderStudentScore = () => {
+    if (!submitted || !currentUserId) return null;
+    
+    const userSubmission = assignment?.submittedFiles?.find(s => s.userId === currentUserId);
+    if (!userSubmission || !userSubmission.score) return null;
+    
+    return (
+      <div className="student-score">
+        <h3>Your Score</h3>
+        <p className="score-display">
+          You answered {userSubmission.score.correct} out of {userSubmission.score.total} questions correctly.
+          <span className="score-percentage">Score: {userSubmission.score.percentage}%</span>
+        </p>
+      </div>
+    );
+  };
 
   if (loading) return <div className="loading">Loading...</div>;
 
@@ -421,62 +525,8 @@ const renderStudentScore = () => {
       {/* Assignment details */}
       <div className="assignment-info">
         {isAdmin ? (
-          <div className="admin-editor">
-            <div className="form-group">
-              <label>Description:</label>
-              <textarea
-                value={assignment?.assignmentDescription || ''}
-                onChange={(e) => setAssignment(assignment ? {
-                  ...assignment,
-                  assignmentDescription: e.target.value
-                } : null)}
-              />
-            </div>
-            
-            <div className="form-group">
-              <label>Due Date:</label>
-              <input
-                type="datetime-local"
-                value={assignment?.dueDate?.toDate().toISOString().slice(0, 16) || ''}
-                onChange={(e) => setAssignment(assignment ? {
-                  ...assignment,
-                  dueDate: Timestamp.fromDate(new Date(e.target.value))
-                } : null)}
-              />
-            </div>
-            
-            <button 
-              className="save-button"
-              onClick={async () => {
-                try {
-                  if (!assignment) return;
-                  const courseId = '9MPz8i5c4izfgxrapfc7';
-                  const courseRef = doc(db, 'courses', courseId);
-                  
-                  await runTransaction(db, async (transaction) => {
-                    const courseSnap = await transaction.get(courseRef);
-                    const homeworkArray = courseSnap.data()?.homework || [];
-                    const index = homeworkArray.findIndex((hw: Homework) => hw.id === id);
-                    
-                    if (index >= 0) {
-                      homeworkArray[index] = {
-                        ...homeworkArray[index],
-                        assignmentDescription: assignment.assignmentDescription,
-                        dueDate: assignment.dueDate
-                      };
-                      transaction.update(courseRef, { homework: homeworkArray });
-                    }
-                  });
-                  
-                  setError(null);
-                } catch (error) {
-                  setError(`Failed to save changes: ${(error as Error).message}`);
-                }
-              }}
-            >
-              Save Changes
-            </button>
-          </div>
+          <EditDraft courseId={courseId} isEdit={true} homeworkId={assignment?.id}/>
+        
         ) : (
           /* Student view */
           <>
@@ -518,7 +568,6 @@ const renderStudentScore = () => {
                   <p>Your answers have been recorded.</p>
                   {renderStudentScore()}
                 </div>
-
               )}
             </>
           )}

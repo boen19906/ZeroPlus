@@ -59,7 +59,7 @@ const AppContent = ({ user }: { user: User | null }) => {
         <Route path="/admin" element={<Admin />} />
         <Route 
           path="/admin/create-draft/:courseId" 
-          element={<CreateDraft />} 
+          element={<CreateDraft/>} 
         />
 
         <Route path="/course" element={<Course />}/>
