@@ -9,6 +9,7 @@ import Homework from './Homework';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import CreateDraft from '../Admin/CreateDraft';
 import EditDraft from '../Admin/EditDraft';
+import { File, Download } from 'lucide-react';
 
 // Define the quiz question interface
 interface QuizQuestion {
@@ -27,6 +28,11 @@ interface QuizSubmission {
   fileURL?: string; // For file upload
   originalFilename?: string; // For file upload
   isCorrect?: boolean; // For multiple choice and short answer
+}
+
+interface guideFile {
+  name: string;
+  url: string;
 }
 
 
@@ -516,6 +522,61 @@ const Assignment: React.FC = () => {
     );
   };
 
+  const FileItem = ({ file, index }: { file: guideFile; index: number }) => {
+    const [videoError, setVideoError] = useState(false);
+  
+    const getFileType = (fileName: string): 'image' | 'video' | 'other' => {
+      const extension = fileName.split('.').pop()?.toLowerCase();
+      if (extension && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(extension)) {
+        return 'image';
+      }
+      if (extension && ['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(extension)) {
+        return 'video';
+      }
+      return 'other';
+    };
+  
+    const fileType = getFileType(file.name);
+  
+    return (
+      <div key={index}>
+              <File size={20} />
+              <span className="font-medium">{file.name}</span>
+              <a 
+                href={file.url} 
+                download={file.name}
+                className="flex items-center text-sm text-green-600 hover:text-green-800"
+              >
+                <Download size={16} className="mr-1" /> Download
+              </a>
+  
+          {/* Media Preview Section */}
+          {fileType === 'image' && (
+              <img 
+                src={file.url} 
+                alt={file.name}
+                style={{ maxWidth: '100%', maxHeight: '200px' }}
+              />
+          )}
+
+
+          
+          {fileType === 'video' && !videoError && (
+            <div className="mt-2 flex justify-center">
+              <video 
+                src={file.url}
+                controls
+                style={{ maxWidth: '100%', maxHeight: '200px' }}
+                onError={() => setVideoError(true)}
+              >
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          )}
+        </div>
+    );
+  }
+
   if (loading) return <div className="loading">Loading...</div>;
 
   return (
@@ -541,12 +602,24 @@ const Assignment: React.FC = () => {
         )}
       </div>
       
+      {/* Files section - Added this new section */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-3">Guides</h2>
+        {!assignment?.files || assignment.files.length === 0 ? (
+          <p className="text-gray-500">No files attached to this assignment.</p>
+        ) : (
+          <div className="files-list">
+            {assignment.files.map((file, index) => <FileItem key={index} file={file} index={index} />)}
+          </div>
+        )}
+      </div>
+      
       {/* Quiz section for students */}
       {!isAdmin && (
-        <div className="quiz-container">
-          <h2>Quiz Questions</h2>
+        <div className="quiz-container mt-6">
+          <h2 className="text-xl font-semibold mb-3">Quiz Questions</h2>
           {assignment?.quiz?.length === 0 ? (
-            <p>No quiz questions available for this assignment.</p>
+            <p className="text-gray-500">No quiz questions available for this assignment.</p>
           ) : (
             <>
               <div className="quiz-questions">
@@ -557,15 +630,20 @@ const Assignment: React.FC = () => {
               
               {!submitted && (
                 <>
-                  {error && <p className="error-message">{error}</p>}
-                  <button onClick={handleSubmit} className="submit-button">Submit Answers</button>
+                  {error && <p className="error-message text-red-500">{error}</p>}
+                  <button 
+                    onClick={handleSubmit} 
+                    className="submit-button bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded mt-4"
+                  >
+                    Submit Answers
+                  </button>
                 </>
               )}
               
               {submitted && (
-                <div className="submission-success">
-                  <h3>Assignment Submitted</h3>
-                  <p>Your answers have been recorded.</p>
+                <div className="submission-success bg-green-50 border border-green-200 rounded-md p-4 mt-4">
+                  <h3 className="font-semibold text-green-800">Assignment Submitted</h3>
+                  <p className="text-green-700">Your answers have been recorded.</p>
                   {renderStudentScore()}
                 </div>
               )}
@@ -576,8 +654,8 @@ const Assignment: React.FC = () => {
       
       {/* Admin submissions view */}
       {isAdmin && (
-        <div className="admin-view">
-          <h2>Student Submissions</h2>
+        <div className="admin-view mt-6">
+          <h2 className="text-xl font-semibold mb-3">Student Submissions</h2>
           {renderAdminSubmissions()}
         </div>
       )}

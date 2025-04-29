@@ -26,6 +26,7 @@ interface Homework {
   locked: boolean;
   submittedFiles?: any[];
   quiz: QuizQuestion[]
+  files?: { name: string; url: string }[];
 }
 
 interface LocalHomework extends Homework {
