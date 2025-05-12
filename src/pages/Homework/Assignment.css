@@ -176,6 +176,7 @@
     font-size: 0.85rem;
     color: #666;
   }
+
   
   /* Add some responsive design */
   @media (max-width: 768px) {

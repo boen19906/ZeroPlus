@@ -253,7 +253,8 @@ const EditDraft: React.FC<EditDraftProps> = ({ courseId, isEdit, homeworkId }) =
 
           <div className="quiz-section">
             {!showQuiz && !quizSaved && (
-              <button type="button" onClick={toggleQuizEditor}>
+              <button type="button" onClick={toggleQuizEditor}
+              style={{margin: "1rem"}}>
                 {isEdit ? 'Add Quiz' : 'Create Quiz'}
               </button>
             )}

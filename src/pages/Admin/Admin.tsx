@@ -378,6 +378,7 @@ const Admin: React.FC = () => {
                                 <td onClick={(e) => e.stopPropagation()}>
                                   <button
                                     className={`lock-btn ${hw.locked ? 'locked' : 'unlocked'}`}
+                                    style={{width: "90px"}}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleToggleLock(course.id, hw.id);
@@ -389,6 +390,7 @@ const Admin: React.FC = () => {
                                 <td onClick={(e) => e.stopPropagation()}>
                                   <button
                                     className={`post-btn ${hw.posted ? 'posted' : 'draft'}`}
+                                    style={{width: "90px"}}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleTogglePost(course.id, hw.id);
