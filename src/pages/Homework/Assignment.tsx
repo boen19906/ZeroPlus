@@ -9,7 +9,7 @@ import Homework from './Homework';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import CreateDraft from '../Admin/CreateDraft';
 import EditDraft from '../Admin/EditDraft';
-import { File, Download } from 'lucide-react';
+import { File, Download, RefreshCw } from 'lucide-react';
 
 // Define the quiz question interface
 interface QuizQuestion {
@@ -49,6 +49,7 @@ const Assignment: React.FC = () => {
   const { isAdmin } = useAdmin(auth, db);
   const currentUser = auth.currentUser;
   const currentUserId = currentUser?.uid;
+  const [feedback, setFeedback] = useState<{[key: number]: {isCorrect: boolean, message: string}}>({});
 
   const courseId = '9MPz8i5c4izfgxrapfc7';
 
@@ -64,6 +65,10 @@ const Assignment: React.FC = () => {
 
   // Handle answer changes for multiple choice or short answer questions
   const handleAnswerChange = (questionId: number, value: string) => {
+    // Prevent unnecessary state updates if the value hasn't changed
+    if (answers[questionId] === value) return;
+    
+    // Use functional update to ensure we're using the latest state
     setAnswers(prev => ({
       ...prev,
       [questionId]: value
@@ -83,6 +88,7 @@ const Assignment: React.FC = () => {
       // Track correct answers
       let correctCount = 0;
       let totalMultipleChoice = 0;
+      let newFeedback: {[key: number]: {isCorrect: boolean, message: string}} = {};
       
       // Process each question's answer
       if (assignment?.quiz) {
@@ -121,8 +127,16 @@ const Assignment: React.FC = () => {
               if (answer === question.correctAnswer) {
                 correctCount++;
                 questionSubmission.isCorrect = true;
+                newFeedback[i] = {
+                  isCorrect: true,
+                  message: 'Correct! Great job!'
+                };
               } else {
                 questionSubmission.isCorrect = false;
+                newFeedback[i] = {
+                  isCorrect: false,
+                  message: `Incorrect. The correct answer is: ${question.correctAnswer}`
+                };
               }
             }
           }
@@ -130,6 +144,10 @@ const Assignment: React.FC = () => {
           quizSubmissions.push(questionSubmission);
         }
       }
+
+      // Set feedback immediately for visual indicators
+      setFeedback(newFeedback);
+      setSubmitted(true);
   
       // Update Firestore with all submissions
       const courseRef = doc(db, 'courses', courseId);
@@ -189,12 +207,20 @@ const Assignment: React.FC = () => {
       const updatedHomework = courseDoc.data()?.homework || [];
       const updatedAssignment = updatedHomework.find((hw: Homework) => hw.id === id);
       setAssignment(updatedAssignment);
-      setSubmitted(true);
       setError(null);
     } catch (error) {
       console.error('Submission failed:', error);
       setError(`Submission failed: ${(error as Error).message}`);
     }
+  };
+
+  // Restart quiz function - reset states
+  const handleRestartQuiz = () => {
+    setAnswers({});
+    setSelectedFiles({});
+    setSubmitted(false);
+    setFeedback({});
+    setError(null);
   };
 
   // New function to mark short answer questions as correct or incorrect
@@ -328,12 +354,27 @@ const Assignment: React.FC = () => {
             if (userSubmission?.quizAnswers) {
               // Populate answers state
               const answerMap: {[key: number]: string} = {};
+              const feedbackMap: {[key: number]: {isCorrect: boolean, message: string}} = {};
+              
               userSubmission.quizAnswers.forEach((qa: QuizSubmission) => {
                 if (qa.answer) {
                   answerMap[qa.questionId] = qa.answer;
+                  
+                  // Get the question to determine correct answer
+                  const question = assignmentWithTimestamps.quiz?.[qa.questionId];
+                  if (question && qa.isCorrect !== undefined) {
+                    feedbackMap[qa.questionId] = {
+                      isCorrect: qa.isCorrect,
+                      message: qa.isCorrect 
+                        ? 'Correct! Great job!' 
+                        : `Incorrect. The correct answer is: ${question.correctAnswer}`
+                    };
+                  }
                 }
               });
+              
               setAnswers(answerMap);
+              setFeedback(feedbackMap);
             }
           }
         } else {
@@ -353,33 +394,63 @@ const Assignment: React.FC = () => {
   const renderQuizQuestion = (question: QuizQuestion, index: number) => {
     switch (question.type) {
       case 'multiple_choice':
-        return (
-          <div className="quiz-question multiple-choice" key={index}>
-            <h3>Question {index + 1} <span className="points">({question.points} points)</span></h3>
-            <p>{question.question}</p>
-            <div className="options">
-              {question.options?.map((option, optionIndex) => (
-                <div className="option" key={optionIndex}>
-                  <input
-                    type="radio"
-                    id={`q${index}-o${optionIndex}`}
-                    name={`question-${index}`}
-                    value={option}
-                    checked={answers[index] === option}
-                    onChange={() => handleAnswerChange(index, option)}
-                    disabled={submitted}
-                  />
-                  <label htmlFor={`q${index}-o${optionIndex}`}>{option}</label>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      
+  return (
+    <div className="quiz-question multiple-choice" key={index}>
+      <h3>
+        Question {index + 1}{' '}
+        <span className="points">({question.points} points)</span>
+      </h3>
+      <p>{question.question}</p>
+      <div className="options">
+        {question.options?.map((option, optionIndex) => {
+          // Pre-compute the class names to avoid complex inline logic
+          const isSelected = answers[index] === option;
+          const showFeedback = submitted && isSelected;
+          const isCorrect = showFeedback && feedback[index]?.isCorrect;
+          const isIncorrect = showFeedback && !feedback[index]?.isCorrect;
+          
+          let className = "option";
+          if (isSelected) className += " selected";
+          if (isCorrect) className += " correct";
+          if (isIncorrect) className += " incorrect";
+          
+          return (
+            <label 
+              className={className}
+              key={optionIndex}
+              htmlFor={`q${index}-o${optionIndex}`}
+            >
+              <input
+                type="radio"
+                id={`q${index}-o${optionIndex}`}
+                name={`question-${index}`}
+                value={option}
+                checked={isSelected}
+                onChange={() => {
+                  if (!submitted) handleAnswerChange(index, option);
+                }}
+                disabled={submitted}
+              />
+              {option}
+            </label>
+          );
+        })}
+      </div>
+      {submitted && feedback[index] && (
+        <div className={`feedback ${feedback[index].isCorrect ? 'correct' : 'incorrect'}`}>
+          {feedback[index].message}
+        </div>
+      )}
+    </div>
+  );
+  
       case 'short_answer':
         return (
           <div className="quiz-question short-answer" key={index}>
-            <h3>Question {index + 1} <span className="points">({question.points} points)</span></h3>
+            <h3>
+              Question {index + 1}{' '}
+              <span className="points">({question.points} points)</span>
+            </h3>
             <p>{question.question}</p>
             <textarea
               value={answers[index] || ''}
@@ -390,45 +461,70 @@ const Assignment: React.FC = () => {
             />
           </div>
         );
-      
+  
       case 'file_upload':
         return (
           <div className="quiz-question file-upload" key={index}>
-            <h3>Question {index + 1} <span className="points">({question.points} points)</span></h3>
+            <h3>
+              Question {index + 1}{' '}
+              <span className="points">({question.points} points)</span>
+            </h3>
             <p>{question.question}</p>
             {submitted ? (
-              <p>File submitted: {
-                assignment?.submittedFiles?.find(s => s.userId === currentUserId)?.quizAnswers?.[index]?.originalFilename || 'No file'
-              }</p>
+              <p>
+                File submitted:{' '}
+                {assignment?.submittedFiles?.find((s) => s.userId === currentUserId)?.quizAnswers?.[index]
+                  ?.originalFilename || 'No file'}
+              </p>
             ) : (
-              <div className="upload-box" onClick={() => document.getElementById(`file-upload-${index}`)?.click()}>
-                <svg className="file-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div
+                className="upload-box"
+                onClick={() => document.getElementById(`file-upload-${index}`)?.click()}
+              >
+                <svg
+                  className="file-icon"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="48"
+                  height="48"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                   <polyline points="14 2 14 8 20 8"></polyline>
                   <line x1="9" y1="15" x2="15" y2="15"></line>
                   <line x1="9" y1="11" x2="15" y2="11"></line>
                 </svg>
                 <p className="upload-text">Click to upload a file</p>
-                <input 
+                <input
                   id={`file-upload-${index}`}
-                  type="file" 
-                  onChange={(e) => handleFileChange(index, e)} 
-                  required 
+                  type="file"
+                  onChange={(e) => handleFileChange(index, e)}
+                  required
                   accept={question.allowedFileTypes?.join(',')}
+                  style={{ display: 'none' }} // Hide the file input
                 />
-                {selectedFiles[index] && <p className="selected-file">{selectedFiles[index]?.name}</p>}
+                {selectedFiles[index] && (
+                  <p className="selected-file">{selectedFiles[index]?.name}</p>
+                )}
               </div>
             )}
             {question.allowedFileTypes && (
-              <p className="file-types">Allowed file types: {question.allowedFileTypes.join(', ')}</p>
+              <p className="file-types">
+                Allowed file types: {question.allowedFileTypes.join(', ')}
+              </p>
             )}
           </div>
         );
-
+  
       default:
-        return <div>Unknown question type</div>;
+        return <div key={index}>Unknown question type</div>;
     }
   };
+  
 
   const renderAdminSubmissions = () => {
     if (!assignment?.submittedFiles || assignment.submittedFiles.length === 0) {
@@ -518,6 +614,12 @@ const Assignment: React.FC = () => {
           You answered {userSubmission.score.correct} out of {userSubmission.score.total} questions correctly.
           <span className="score-percentage">Score: {userSubmission.score.percentage}%</span>
         </p>
+        <button 
+          onClick={handleRestartQuiz} 
+          className="restart-button"
+        >
+          <RefreshCw size={16} className="mr-2" /> Restart Quiz
+        </button>
       </div>
     );
   };
@@ -539,43 +641,56 @@ const Assignment: React.FC = () => {
     const fileType = getFileType(file.name);
   
     return (
-      <div key={index}>
-              <File size={20} />
-              <span className="font-medium">{file.name}</span>
-              <a 
-                href={file.url} 
-                download={file.name}
-                className="flex items-center text-sm text-green-600 hover:text-green-800"
-              >
-                <Download size={16} className="mr-1" /> Download
-              </a>
-  
-          {/* Media Preview Section */}
-          {fileType === 'image' && (
-              <img 
-                src={file.url} 
-                alt={file.name}
-                style={{ maxWidth: '100%', maxHeight: '200px' }}
-              />
-          )}
+      <div key={index} className="flex flex-col items-center p-4 border rounded-lg shadow-sm bg-white mb-4">
 
-
-          
-          {fileType === 'video' && !videoError && (
-            <div className="mt-2 flex justify-center">
-              <video 
-                src={file.url}
-                controls
-                style={{ maxWidth: '100%', maxHeight: '200px' }}
-                onError={() => setVideoError(true)}
-              >
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          )}
+        
+        {/* File Icon and Name */}
+        <div className="flex items-center mb-4">
+          <File size={20} className="mr-2 text-blue-500" />
+          <span className="font-medium">{file.name}</span>
         </div>
+        
+        {/* Media Preview Section */}
+        {fileType === 'image' && (
+          <div >
+            <img 
+              src={file.url} 
+              alt={file.name}
+              style={{ maxHeight: '250px'}}
+            />
+          </div>
+        )}
+
+
+      
+      {fileType === 'video' && !videoError && (
+        <div className="mb-4 w-full flex justify-center video-container">
+          <video 
+            className="stable-video"
+            src={file.url}
+            controls
+            style={{ maxHeight: '250px'}}
+            onError={() => setVideoError(true)}
+            preload="metadata"
+            playsInline
+          >
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      )}
+
+        
+        {/* Download Button */}
+        <a 
+          href={file.url} 
+          download={file.name}
+          className="flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors w-full max-w-xs mt-2"
+        >
+          <Download size={16} className="mr-2" /> Download
+        </a>
+      </div>
     );
-  }
+  };
 
   if (loading) return <div className="loading">Loading...</div>;
 

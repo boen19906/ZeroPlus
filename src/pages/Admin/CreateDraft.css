@@ -48,6 +48,8 @@
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
+    margin-left:0;
+    margin-right:0;
   }
   
   .file-upload-button:hover {

@@ -269,6 +269,7 @@ const CreateDraft: React.FC = () => {
             {showQuiz && (
               <QuizManager 
                 onSaveQuiz={handleSaveQuiz}
+                onCancel={() => setShowQuiz(false)}
               />
             )}
             

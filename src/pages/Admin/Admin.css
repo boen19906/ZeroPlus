@@ -1,141 +1,149 @@
 /* Combined Table Styles */
 .admin-container {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .table-section {
-    margin: 3rem 0;
-  }
-  
-  .table-section h2 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 0.5rem;
-  }
-  
-  .table-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
-  }
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
 
-  .table-container.users-table {
-    overflow-y: auto;
-    max-height: 300px;
-  }
+.admin-container h1,
+.admin-container h2 {
+  text-align: center;
+}
 
-  .table-container.lessons-table {
-    overflow-y: auto;
-    max-height: 500px;
-  }
-  
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 600px;
-  }
-  
-  
-  .data-table th {
-    background-color: #007bff;
-    color: white;
-    padding: 1rem;
-    text-align: left;
-  }
-  
-  .data-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .data-table tr:nth-child(even) {
-    background-color: #f8f9fa;
-  }
-  
-  .uid {
-    font-family: monospace;
-    font-size: 0.9em;
-    color: #666;
-  }
-  
-  .toggle-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.1em;
-    padding: 0 0.5rem;
-  }
-  
-  .expanded td {
-    background-color: #f1f8ff;
-    padding: 0;
-  }
-  
-  .student-list {
-    padding: 1rem;
-  }
-  
-  .student-list h4 {
-    margin: 0 0 1rem 0;
-    color: #444;
-  }
-  
-  .student-email {
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .student-email:last-child {
-    border-bottom: none;
-  }
-  
-  .loading, .error {
-    text-align: center;
-    padding: 2rem;
-    font-size: 1.1em;
-  }
-  
-  .error {
-    color: #dc3545;
-  }
+.table-section {
+  margin: 3rem 0;
+}
 
-  /* Student List Styles */
+.table-section h2,
+.table-section p {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+  text-align: center;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.table-container.users-table {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.table-container.lessons-table {
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.data-table th {
+  background-color: #007bff;
+  color: white;
+  padding: 1rem;
+  text-align: left;
+}
+
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.uid {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.toggle-btn {
+  background: none;
+  color: #333;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1em;
+  padding: 0 0.5rem;
+}
+
+.toggle-btn:hover {
+  background-color: #eee;
+}
+
+.expanded td {
+  background-color: #f1f8ff;
+  padding: 0;
+}
+
+.student-list {
+  padding: 1rem;
+  text-align: center;
+  max-height: 300px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.student-list h3,
+.student-list h4 {
+  margin: 0 0 1rem 0;
+  color: #444;
+  text-align: center;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.1em;
+}
+
+.error {
+  color: #dc3545;
+}
+
+/* Student List Styles */
 .student-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem;
-    border-bottom: 1px solid #eee;
-  }
-  
-  .student-email {
-    flex-grow: 1;
-  }
-  
-  .remove-student-btn {
-    background: none;
-    border: none;
-    color: #dc3545;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0 0.5rem;
-    transition: color 0.2s ease;
-  }
-  
-  .remove-student-btn:hover {
-    color: #bb2d3b;
-  }
-  
-  .student-list {
-    max-height: 300px;
-    overflow-y: auto;
-  }
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+  margin: 0 auto;
+  width: 80%;
+  box-sizing: border-box;
+}
 
-  /* Delete button styles */
+.student-email {
+  padding: 0 10px;
+  text-align: center;
+}
+
+.remove-student-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0 0.5rem;
+  margin-left: 5px;
+  transition: color 0.2s ease;
+}
+
+.remove-student-btn:hover {
+  color: #bb2d3b;
+}
+
+/* Delete button styles */
 .delete-btn {
   background: none;
   border: none;
@@ -149,6 +157,7 @@
 
 .delete-btn:hover {
   color: #bb2d3b;
+  background-color: #eee;
 }
 
 .create-draft-btn {
@@ -171,4 +180,22 @@
 .data-table td:nth-child(6) {
   width: 50px;
   padding: 0 0.5rem;
+}
+
+/* Homework section styling */
+.homework-section h3 {
+  text-align: center;
+  margin: 1rem 0;
+  color: #444;
+}
+
+/* Button styling for lock and post buttons */
+.lock-btn,
+.post-btn,
+.mark-paid-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
 }

@@ -66,7 +66,8 @@ const EditDraft: React.FC<EditDraftProps> = ({ courseId, isEdit, homeworkId }) =
             
             if (homeworkItem) {
               const dueDate = homeworkItem.dueDate.toDate();
-              const formattedDueDate = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`;
+              // Format for datetime-local input requires YYYY-MM-DDThh:mm format
+              const formattedDueDate = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}T${String(dueDate.getHours()).padStart(2, '0')}:${String(dueDate.getMinutes()).padStart(2, '0')}`;
               
               setFormData({
                 name: homeworkItem.name,

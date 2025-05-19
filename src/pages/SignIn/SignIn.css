@@ -70,6 +70,9 @@ button[type="submit"] {
     cursor: pointer;
     transition: background-color 0.2s;
     margin-top:1rem;
+    margin-left: 0; /* Add explicit margin reset */
+    margin-right: 0; /* Add explicit margin reset */
+    text-align: center; /* Keep button text centered */
 }
 
 button[type="submit"]:hover {
