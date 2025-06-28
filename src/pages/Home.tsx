@@ -137,12 +137,6 @@ const Home = ({ user: propUser }: { user: User | null }) => {
                     <p>Join the class to start your journey to success</p>
                     <button onClick={handleJoinClass}>Join Class</button>
                   </div>
-                  <hr/>
-                  <div className="homework-section">
-                    <h2>Homework</h2>
-                    <p>Check your homework assignments</p>
-                    <button onClick={() => navigate("/homework")}>Go to Homework</button>
-                  </div>
                 </>
               )}
               
