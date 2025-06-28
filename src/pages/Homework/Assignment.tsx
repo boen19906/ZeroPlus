@@ -81,6 +81,7 @@ const Assignment: React.FC = () => {
       setError('You must be logged in to submit.');
       return;
     }
+    
   
     try {
       const quizSubmissions: QuizSubmission[] = [];
@@ -148,6 +149,10 @@ const Assignment: React.FC = () => {
       // Set feedback immediately for visual indicators
       setFeedback(newFeedback);
       setSubmitted(true);
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      }, 100);
+      
   
       // Update Firestore with all submissions
       const courseRef = doc(db, 'courses', courseId);
@@ -221,7 +226,9 @@ const Assignment: React.FC = () => {
     setSubmitted(false);
     setFeedback({});
     setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  
 
   // New function to mark short answer questions as correct or incorrect
   const markShortAnswer = async (
