@@ -356,12 +356,6 @@ const Admin: React.FC = () => {
   return (
     <div className="admin-container">
       <h1 className="admin-header">Admin Dashboard</h1>
-      {/* Create Course Button and Modal */}
-      <div style={{ marginBottom: 20 }}>
-        <button className="create-draft-btn" onClick={() => setShowCreateCourse(true)}>
-          Create Course
-        </button>
-      </div>
       {showCreateCourse && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -378,58 +372,60 @@ const Admin: React.FC = () => {
               </div>
               <div style={{ marginTop: 10 }}>
                 <label>Enroll Students:</label>
-                <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ccc', padding: 8 }}>
-                  {users.filter(u => !u.admin).map(user => (
-                    <div key={user.id}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={selectedStudentIds.includes(user.id)}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setSelectedStudentIds(ids => [...ids, user.id]);
+                <div className="student-selection">
+                  {users.filter(u => !u.admin).map(user => {
+                    const isSelected = selectedStudentIds.includes(user.id);
+                    console.log(`User ${user.email} (${user.id}): selected = ${isSelected}, selectedIds = `, selectedStudentIds);
+                    return (
+                      <button
+                        key={user.id}
+                        type="button"
+                        className={`student-item ${isSelected ? 'selected' : ''}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('=== CLICK EVENT ===');
+                          console.log('Clicked user:', user.email, 'ID:', user.id);
+                          console.log('Current selectedStudentIds:', [...selectedStudentIds]);
+                          console.log('Is currently selected:', selectedStudentIds.includes(user.id));
+                          
+                          setSelectedStudentIds(prevIds => {
+                            console.log('Previous IDs in setter:', [...prevIds]);
+                            const isCurrentlySelected = prevIds.includes(user.id);
+                            let newIds;
+                            
+                            if (isCurrentlySelected) {
+                              newIds = prevIds.filter(id => id !== user.id);
+                              console.log('Removing user, new IDs:', [...newIds]);
                             } else {
-                              setSelectedStudentIds(ids => ids.filter(id => id !== user.id));
+                              newIds = [...prevIds, user.id];
+                              console.log('Adding user, new IDs:', [...newIds]);
                             }
-                          }}
-                        />
-                        {user.email || 'N/A'}
-                      </label>
-                    </div>
-                  ))}
+                            
+                            return newIds;
+                          });
+                        }}
+                      >
+                        {user.email || 'N/A'} {isSelected ? '✓' : ''}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               {createCourseError && <div style={{ color: 'red', marginTop: 8 }}>{createCourseError}</div>}
-              <div style={{ marginTop: 16 }}>
+              <div>
                 <button type="submit" className="create-draft-btn" disabled={creatingCourse}>
                   {creatingCourse ? 'Creating...' : 'Create Course'}
                 </button>
-                <button type="button" style={{ marginLeft: 10 }} onClick={() => setShowCreateCourse(false)}>
+                <button type="button" onClick={() => setShowCreateCourse(false)}>
                   Cancel
                 </button>
               </div>
             </form>
           </div>
-          <style>{`
-            .modal-overlay {
-              position: fixed;
-              top: 0; left: 0; right: 0; bottom: 0;
-              background: rgba(0,0,0,0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              z-index: 1000;
-            }
-            .modal-content {
-              background: #fff;
-              padding: 32px 24px;
-              border-radius: 8px;
-              min-width: 320px;
-              box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-            }
-          `}</style>
         </div>
       )}
+
       {/* Edit Course Modal */}
       {showEditCourse && (
         <div className="modal-overlay">
@@ -447,33 +443,52 @@ const Admin: React.FC = () => {
               </div>
               <div style={{ marginTop: 10 }}>
                 <label>Enroll Students:</label>
-                <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ccc', padding: 8 }}>
-                  {users.filter(u => !u.admin).map(user => (
-                    <div key={user.id}>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={editSelectedStudentIds.includes(user.id)}
-                          onChange={e => {
-                            if (e.target.checked) {
-                              setEditSelectedStudentIds(ids => [...ids, user.id]);
+                <div className="student-selection">
+                  {users.filter(u => !u.admin).map(user => {
+                    const isSelected = editSelectedStudentIds.includes(user.id);
+                    console.log(`EDIT - User ${user.email} (${user.id}): selected = ${isSelected}, selectedIds = `, editSelectedStudentIds);
+                    return (
+                      <button
+                        key={user.id}
+                        type="button"
+                        className={`student-item ${isSelected ? 'selected' : ''}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('=== EDIT CLICK EVENT ===');
+                          console.log('Clicked user:', user.email, 'ID:', user.id);
+                          console.log('Current editSelectedStudentIds:', [...editSelectedStudentIds]);
+                          console.log('Is currently selected:', editSelectedStudentIds.includes(user.id));
+                          
+                          setEditSelectedStudentIds(prevIds => {
+                            console.log('EDIT - Previous IDs in setter:', [...prevIds]);
+                            const isCurrentlySelected = prevIds.includes(user.id);
+                            let newIds;
+                            
+                            if (isCurrentlySelected) {
+                              newIds = prevIds.filter(id => id !== user.id);
+                              console.log('EDIT - Removing user, new IDs:', [...newIds]);
                             } else {
-                              setEditSelectedStudentIds(ids => ids.filter(id => id !== user.id));
+                              newIds = [...prevIds, user.id];
+                              console.log('EDIT - Adding user, new IDs:', [...newIds]);
                             }
-                          }}
-                        />
-                        {user.email || 'N/A'}
-                      </label>
-                    </div>
-                  ))}
+                            
+                            return newIds;
+                          });
+                        }}
+                      >
+                        {user.email || 'N/A'} {isSelected ? '✓' : ''}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
               {editCourseError && <div style={{ color: 'red', marginTop: 8 }}>{editCourseError}</div>}
-              <div style={{ marginTop: 16 }}>
+              <div>
                 <button type="submit" className="create-draft-btn" disabled={editingCourse}>
                   {editingCourse ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button type="button" style={{ marginLeft: 10 }} onClick={() => setShowEditCourse(false)}>
+                <button type="button" onClick={() => setShowEditCourse(false)}>
                   Cancel
                 </button>
               </div>
@@ -518,6 +533,12 @@ const Admin: React.FC = () => {
       {/* Courses Table */}
       <div className="table-section">
         <h2>Courses</h2>
+        {/* Create Course Button and Modal */}
+        <div style={{ marginBottom: 20 }}>
+          <button className="create-draft-btn" onClick={() => setShowCreateCourse(true)}>
+            Create Course
+          </button>
+        </div>
         <div className="table-container">
           <table className="data-table">
             <thead>
