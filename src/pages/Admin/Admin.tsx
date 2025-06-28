@@ -380,7 +380,7 @@ const Admin: React.FC = () => {
                       <button
                         key={user.id}
                         type="button"
-                        className={`student-item ${isSelected ? 'selected' : ''}`}
+                        className={`student-item-enrolling ${isSelected ? 'selected' : ''}`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -451,7 +451,7 @@ const Admin: React.FC = () => {
                       <button
                         key={user.id}
                         type="button"
-                        className={`student-item ${isSelected ? 'selected' : ''}`}
+                        className={`student-item-enrolling ${isSelected ? 'selected' : ''}`}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

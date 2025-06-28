@@ -310,7 +310,7 @@
 }
 
 /* Student Item Button */
-.student-item {
+.student-item-enrolling {
   display: block;
   width: 100%;
   padding: 12px 16px;
@@ -322,7 +322,7 @@
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
+  text-align: center;
 }
 
 .student-item:last-child {
