@@ -31,6 +31,13 @@ const Admin: React.FC = () => {
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [creatingCourse, setCreatingCourse] = useState(false);
   const [createCourseError, setCreateCourseError] = useState('');
+  const [showEditCourse, setShowEditCourse] = useState(false);
+  const [editCourseId, setEditCourseId] = useState<string | null>(null);
+  const [editCourseName, setEditCourseName] = useState('');
+  const [editSelectedStudentIds, setEditSelectedStudentIds] = useState<string[]>([]);
+  const [editingCourse, setEditingCourse] = useState(false);
+  const [editCourseError, setEditCourseError] = useState('');
+  const [deletingCourseId, setDeletingCourseId] = useState<string | null>(null);
   const db = getFirestore();
 
   const navigate = useNavigate();
@@ -287,6 +294,62 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleDeleteCourse = async (courseId: string) => {
+    if (!window.confirm('Are you sure you want to delete this course?')) return;
+    setDeletingCourseId(courseId);
+    try {
+      await updateDoc(doc(db, 'courses', courseId), { students: [], homework: [], courseName: '' }); // Optional: clear data before delete
+      await (await import('firebase/firestore')).deleteDoc(doc(db, 'courses', courseId));
+      setCourses(prev => prev.filter(c => c.id !== courseId));
+    } catch (err) {
+      alert('Failed to delete course');
+    } finally {
+      setDeletingCourseId(null);
+    }
+  };
+
+  const openEditCourse = (course: Course) => {
+    setEditCourseId(course.id);
+    setEditCourseName(course.courseName);
+    setEditSelectedStudentIds(course.students);
+    setEditCourseError('');
+    setShowEditCourse(true);
+  };
+
+  const handleEditCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editCourseId) return;
+    setEditingCourse(true);
+    setEditCourseError('');
+    try {
+      const courseRef = doc(db, 'courses', editCourseId);
+      await updateDoc(courseRef, {
+        courseName: editCourseName,
+        students: editSelectedStudentIds,
+      });
+      // Fetch emails for selected students
+      const studentEmails = await Promise.all(
+        editSelectedStudentIds.map(async (userId) => {
+          const userDoc = await getDoc(doc(db, 'users', userId));
+          return userDoc.exists() ? userDoc.data().email || 'N/A' : 'Unknown';
+        })
+      );
+      setCourses(prev => prev.map(c =>
+        c.id === editCourseId
+          ? { ...c, courseName: editCourseName, students: editSelectedStudentIds, studentEmails }
+          : c
+      ));
+      setShowEditCourse(false);
+      setEditCourseId(null);
+      setEditCourseName('');
+      setEditSelectedStudentIds([]);
+    } catch (err: any) {
+      setEditCourseError(err.message || 'Failed to update course');
+    } finally {
+      setEditingCourse(false);
+    }
+  };
+
   if (isLoading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
@@ -367,6 +430,57 @@ const Admin: React.FC = () => {
           `}</style>
         </div>
       )}
+      {/* Edit Course Modal */}
+      {showEditCourse && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Edit Course</h2>
+            <form onSubmit={handleEditCourse}>
+              <div>
+                <label>Course Name:</label>
+                <input
+                  type="text"
+                  value={editCourseName}
+                  onChange={e => setEditCourseName(e.target.value)}
+                  required
+                />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <label>Enroll Students:</label>
+                <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ccc', padding: 8 }}>
+                  {users.filter(u => !u.admin).map(user => (
+                    <div key={user.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={editSelectedStudentIds.includes(user.id)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setEditSelectedStudentIds(ids => [...ids, user.id]);
+                            } else {
+                              setEditSelectedStudentIds(ids => ids.filter(id => id !== user.id));
+                            }
+                          }}
+                        />
+                        {user.email || 'N/A'}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {editCourseError && <div style={{ color: 'red', marginTop: 8 }}>{editCourseError}</div>}
+              <div style={{ marginTop: 16 }}>
+                <button type="submit" className="create-draft-btn" disabled={editingCourse}>
+                  {editingCourse ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button type="button" style={{ marginLeft: 10 }} onClick={() => setShowEditCourse(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {/* Users Table */}
       <div className="table-section ">
         <h2>Users</h2>
@@ -425,6 +539,21 @@ const Admin: React.FC = () => {
                         onClick={() => toggleCourse(course.id)}
                       >
                         {expandedCourse === course.id ? '▼' : '▶'}
+                      </button>
+                      <button
+                        className="edit-btn"
+                        style={{ marginLeft: 8, background: '#ffc107', color: '#222', border: 'none', borderRadius: 4, padding: '0.3rem 0.7rem', cursor: 'pointer' }}
+                        onClick={() => openEditCourse(course)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="delete-btn"
+                        style={{ marginLeft: 8 }}
+                        onClick={() => handleDeleteCourse(course.id)}
+                        disabled={deletingCourseId === course.id}
+                      >
+                        {deletingCourseId === course.id ? 'Deleting...' : '×'}
                       </button>
                     </td>
                   </tr>
