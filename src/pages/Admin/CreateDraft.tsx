@@ -87,6 +87,35 @@ const CreateDraft: React.FC = () => {
     return new Date(year, month - 1, day, hour, minute);
   };
 
+  // Clean quiz data to remove undefined values before saving to Firestore
+  const cleanQuizData = (quiz: QuizQuestion[]): QuizQuestion[] => {
+    return quiz.map(question => {
+      const cleanedQuestion: QuizQuestion = {
+        type: question.type,
+        question: question.question,
+        points: question.points
+      };
+
+      // Only add optional properties if they have valid values
+      if (question.type === 'multiple_choice' && question.options && question.options.length > 0) {
+        cleanedQuestion.options = question.options;
+        if (question.correctAnswer) {
+          cleanedQuestion.correctAnswer = question.correctAnswer;
+        }
+      }
+
+      if (question.type === 'short_answer' && question.correctAnswer) {
+        cleanedQuestion.correctAnswer = question.correctAnswer;
+      }
+
+      if (question.type === 'file_upload' && question.allowedFileTypes && question.allowedFileTypes.length > 0) {
+        cleanedQuestion.allowedFileTypes = question.allowedFileTypes;
+      }
+
+      return cleanedQuestion;
+    });
+  };
+
   const handleSaveQuiz = (quiz: QuizQuestion[]) => {
     console.log('Saving quiz with questions:', quiz); // Debug log
     setQuizData([...quiz]); // Create a new array to ensure state update
@@ -158,78 +187,86 @@ const CreateDraft: React.FC = () => {
     setLoading(true);
     setError('');
     setSuccess(false);
-
+  
     try {
       if (!courseId) throw new Error('No course ID provided');
       if (!formData.name || !formData.dueDate) {
         throw new Error('All fields are required');
       }
-
+  
       const courseRef = doc(db, 'courses', courseId);
       const courseSnap = await getDoc(courseRef);
       
       if (!courseSnap.exists()) throw new Error('Course not found');
-
+  
       // Create dates at local midnight
       const today = new Date();
       const formattedToday = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       const assignedDate = createLocalDate(formattedToday);
       const dueDate = createLocalDate(formData.dueDate);
-
+  
+      // Validate dates
+      if (isNaN(assignedDate.getTime()) || isNaN(dueDate.getTime())) {
+        throw new Error('Invalid date format');
+      }
+  
+      // Create Firestore timestamps
+      const assignedTimestamp = Timestamp.fromDate(assignedDate);
+      const dueTimestamp = Timestamp.fromDate(dueDate);
+  
       // Create temporary homework object for ID generation
       const tempHomework = {
         name: formData.name,
-        assignedDate: Timestamp.fromDate(assignedDate),
-        dueDate: Timestamp.fromDate(dueDate),
+        assignedDate: assignedTimestamp,
+        dueDate: dueTimestamp,
         assignmentDescription: formData.assignmentDescription,
         submitted: {},
         locked: true,
         submittedFiles: []
       };
-
+  
       // Generate unique ID
       const homeworkId = createHomeworkId(tempHomework);
       
-      // If files were attached, create an array of file objects with name and url
-      const fileArray: { name: string; url: string }[] = [];
-      
-      if (attachedFiles.length > 0) {
-        // Convert attachedFiles directly to the format we want to store
-        fileArray.push(...attachedFiles.map(file => ({
-          name: file.name,
-          url: file.url
-        })));
-      }
-
+      // Create the final homework object
       const newHomework: Homework = {
-        ...tempHomework,
         id: homeworkId,
-        posted: false,
+        name: formData.name,
+        assignedDate: assignedTimestamp,
+        dueDate: dueTimestamp,
+        assignmentDescription: formData.assignmentDescription,
         submitted: {},
         locked: true,
+        posted: false,
         submittedFiles: []
       };
-
-      // Add quiz data if available
+  
+      // Add quiz data if available (clean it first to remove undefined values)
       if (quizData.length > 0) {
-        newHomework.quiz = quizData;
+        newHomework.quiz = cleanQuizData(quizData);
       }
-
+  
       // Add file data if available
-      if (fileArray.length > 0) {
-        newHomework.files = fileArray;
+      if (attachedFiles.length > 0) {
+        newHomework.files = attachedFiles.map(file => ({
+          name: file.name,
+          url: file.url
+        }));
       }
-
+  
+      // Log the object to debug before saving
+      console.log('Homework object before saving:', JSON.stringify(newHomework, null, 2));
+  
       // Update Firestore
       const existingHomework = courseSnap.data().homework || [];
       const updatedHomework = [...existingHomework, newHomework];
-
+  
       await updateDoc(courseRef, { homework: updatedHomework });
-
+  
       setSuccess(true);
       setFormData({ 
         name: '', 
-        dueDate: getDefaultDueDate(), // Reset to default due date
+        dueDate: getDefaultDueDate(),
         assignmentDescription: '' 
       });
       setQuizData([]);
@@ -237,6 +274,7 @@ const CreateDraft: React.FC = () => {
       setAttachedFiles([]);
       setTimeout(() => navigate('/admin'), 1000);
     } catch (err: any) {
+      console.error('Error creating homework:', err);
       setError(err.message);
     } finally {
       setLoading(false);

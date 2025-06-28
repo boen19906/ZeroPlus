@@ -81,14 +81,19 @@ const QuizManager: React.FC<QuizManagerProps> = ({ onSaveQuiz, onCancel, initial
     
     if (type === 'multiple_choice') {
       updates.options = ['', ''];
+      // Remove file upload specific properties
       updates.allowedFileTypes = undefined;
     } else if (type === 'file_upload') {
+      // Remove multiple choice specific properties
       updates.options = undefined;
       updates.correctAnswer = undefined;
-      updates.allowedFileTypes = ['image/*', 'video/*'];
-    } else {
+      // Initialize with default file types instead of undefined
+      updates.allowedFileTypes = ['image/*'];
+    } else if (type === 'short_answer') {
+      // Remove both multiple choice and file upload properties
       updates.options = undefined;
       updates.allowedFileTypes = undefined;
+      // Keep correctAnswer for short_answer questions
     }
     
     updateQuestion(id, updates);
@@ -154,10 +159,13 @@ const QuizManager: React.FC<QuizManagerProps> = ({ onSaveQuiz, onCancel, initial
     const question = questions.find(q => q.id === questionId);
     if (question) {
       const types = question.allowedFileTypes || [];
+      const newTypes = checked
+        ? [...types, fileType]
+        : types.filter(t => t !== fileType);
+      
+      // Ensure we never set an empty array for allowedFileTypes
       updateQuestion(questionId, {
-        allowedFileTypes: checked
-          ? [...types, fileType]
-          : types.filter(t => t !== fileType)
+        allowedFileTypes: newTypes.length > 0 ? newTypes : ['image/*']
       });
     }
   };
@@ -214,9 +222,34 @@ const QuizManager: React.FC<QuizManagerProps> = ({ onSaveQuiz, onCancel, initial
     }
 
     try {
-      // Remove the id property before saving
-      const finalQuestions = questions.map(({ id, ...rest }) => rest);
-      onSaveQuiz(finalQuestions as QuizQuestion[]);
+      // Remove the id property before saving and ensure no undefined values
+      const finalQuestions = questions.map(({ id, ...rest }) => {
+        const cleanQuestion: QuizQuestion = {
+          type: rest.type,
+          question: rest.question,
+          points: rest.points
+        };
+
+        // Only add optional properties if they have valid values
+        if (rest.type === 'multiple_choice' && rest.options && rest.options.length > 0) {
+          cleanQuestion.options = rest.options;
+          if (rest.correctAnswer) {
+            cleanQuestion.correctAnswer = rest.correctAnswer;
+          }
+        }
+
+        if (rest.type === 'short_answer' && rest.correctAnswer) {
+          cleanQuestion.correctAnswer = rest.correctAnswer;
+        }
+
+        if (rest.type === 'file_upload' && rest.allowedFileTypes && rest.allowedFileTypes.length > 0) {
+          cleanQuestion.allowedFileTypes = rest.allowedFileTypes;
+        }
+
+        return cleanQuestion;
+      });
+
+      onSaveQuiz(finalQuestions);
       console.log('Quiz saved successfully!');
       setError(null);
     } catch (error) {
@@ -356,7 +389,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ onSaveQuiz, onCancel, initial
                   <label>
                     <input
                       type="checkbox"
-                      checked={question.allowedFileTypes?.includes('image/*')}
+                      checked={question.allowedFileTypes?.includes('image/*') || false}
                       onChange={(e) => toggleAllowedFileType(question.id as string, 'image/*', e.target.checked)}
                     />
                     Images
@@ -364,10 +397,18 @@ const QuizManager: React.FC<QuizManagerProps> = ({ onSaveQuiz, onCancel, initial
                   <label>
                     <input
                       type="checkbox"
-                      checked={question.allowedFileTypes?.includes('video/*')}
+                      checked={question.allowedFileTypes?.includes('video/*') || false}
                       onChange={(e) => toggleAllowedFileType(question.id as string, 'video/*', e.target.checked)}
                     />
                     Videos
+                  </label>
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={question.allowedFileTypes?.includes('application/*') || false}
+                      onChange={(e) => toggleAllowedFileType(question.id as string, 'application/*', e.target.checked)}
+                    />
+                    Documents
                   </label>
                 </div>
               </div>
