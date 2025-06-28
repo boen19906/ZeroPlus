@@ -5,12 +5,37 @@
 
   color-scheme: light dark;
   color: black;
-  background-color:white;
+  background-color: white;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure all text input elements have white backgrounds */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="week"],
+textarea,
+select {
+  background-color: white !important;
+  color: black;
+}
+
+/* Alternative: Target all input and textarea elements */
+input, textarea, select {
+  background-color: white !important;
+  color: black;
 }
 
 a {
