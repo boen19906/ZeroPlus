@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayRemove, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayRemove, Timestamp, addDoc } from 'firebase/firestore';
 import './Admin.css';
 import { useNavigate } from 'react-router-dom';
 import Homework from '../Homework/Homework';
@@ -26,6 +26,11 @@ const Admin: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [expandedCourse, setExpandedCourse] = useState<string | null>(null);
+  const [showCreateCourse, setShowCreateCourse] = useState(false);
+  const [newCourseName, setNewCourseName] = useState('');
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [creatingCourse, setCreatingCourse] = useState(false);
+  const [createCourseError, setCreateCourseError] = useState('');
   const db = getFirestore();
 
   const navigate = useNavigate();
@@ -244,13 +249,124 @@ const Admin: React.FC = () => {
     setExpandedCourse(prev => prev === courseId ? null : courseId);
   };
 
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingCourse(true);
+    setCreateCourseError('');
+    try {
+      if (!newCourseName.trim()) throw new Error('Course name is required');
+      const courseDocRef = await addDoc(collection(db, 'courses'), {
+        courseName: newCourseName,
+        students: selectedStudentIds,
+        homework: [],
+      });
+      // Fetch emails for selected students
+      const studentEmails = await Promise.all(
+        selectedStudentIds.map(async (userId) => {
+          const userDoc = await getDoc(doc(db, 'users', userId));
+          return userDoc.exists() ? userDoc.data().email || 'N/A' : 'Unknown';
+        })
+      );
+      setCourses(prev => [
+        ...prev,
+        {
+          id: courseDocRef.id,
+          courseName: newCourseName,
+          students: selectedStudentIds,
+          studentEmails,
+          homework: [],
+        },
+      ]);
+      setShowCreateCourse(false);
+      setNewCourseName('');
+      setSelectedStudentIds([]);
+    } catch (err: any) {
+      setCreateCourseError(err.message || 'Failed to create course');
+    } finally {
+      setCreatingCourse(false);
+    }
+  };
+
   if (isLoading) return <div className="loading">Loading...</div>;
   if (error) return <div className="error">{error}</div>;
 
   return (
     <div className="admin-container">
       <h1 className="admin-header">Admin Dashboard</h1>
-
+      {/* Create Course Button and Modal */}
+      <div style={{ marginBottom: 20 }}>
+        <button className="create-draft-btn" onClick={() => setShowCreateCourse(true)}>
+          Create Course
+        </button>
+      </div>
+      {showCreateCourse && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Create New Course</h2>
+            <form onSubmit={handleCreateCourse}>
+              <div>
+                <label>Course Name:</label>
+                <input
+                  type="text"
+                  value={newCourseName}
+                  onChange={e => setNewCourseName(e.target.value)}
+                  required
+                />
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <label>Enroll Students:</label>
+                <div style={{ maxHeight: 150, overflowY: 'auto', border: '1px solid #ccc', padding: 8 }}>
+                  {users.filter(u => !u.admin).map(user => (
+                    <div key={user.id}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={selectedStudentIds.includes(user.id)}
+                          onChange={e => {
+                            if (e.target.checked) {
+                              setSelectedStudentIds(ids => [...ids, user.id]);
+                            } else {
+                              setSelectedStudentIds(ids => ids.filter(id => id !== user.id));
+                            }
+                          }}
+                        />
+                        {user.email || 'N/A'}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {createCourseError && <div style={{ color: 'red', marginTop: 8 }}>{createCourseError}</div>}
+              <div style={{ marginTop: 16 }}>
+                <button type="submit" className="create-draft-btn" disabled={creatingCourse}>
+                  {creatingCourse ? 'Creating...' : 'Create Course'}
+                </button>
+                <button type="button" style={{ marginLeft: 10 }} onClick={() => setShowCreateCourse(false)}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+          <style>{`
+            .modal-overlay {
+              position: fixed;
+              top: 0; left: 0; right: 0; bottom: 0;
+              background: rgba(0,0,0,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              z-index: 1000;
+            }
+            .modal-content {
+              background: #fff;
+              padding: 32px 24px;
+              border-radius: 8px;
+              min-width: 320px;
+              box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+            }
+          `}</style>
+        </div>
+      )}
       {/* Users Table */}
       <div className="table-section ">
         <h2>Users</h2>
