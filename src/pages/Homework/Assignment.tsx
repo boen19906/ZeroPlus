@@ -226,7 +226,12 @@ const Assignment: React.FC = () => {
     setSubmitted(false);
     setFeedback({});
     setError(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setTimeout(() => {
+      const quizContainer = document.querySelector('.quiz-container');
+      if (quizContainer) {
+        quizContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
   };
   
 
@@ -396,6 +401,8 @@ const Assignment: React.FC = () => {
 
     fetchAssignment();
   }, [id, navigate, currentUserId]);
+
+  
 
   // Render quiz questions
   const renderQuizQuestion = (question: QuizQuestion, index: number) => {
@@ -713,11 +720,11 @@ const Assignment: React.FC = () => {
         ) : (
           /* Student view */
           <>
-            <p><strong>Description:</strong> {assignment?.assignmentDescription}</p>
-            <p><strong>Assigned Date:</strong> 
+            <p><strong>Description: </strong> {assignment?.assignmentDescription}</p>
+            <p><strong>Assigned Date: </strong> 
               {assignment?.assignedDate?.toDate().toLocaleDateString()}
             </p>
-            <p><strong>Due Date:</strong> 
+            <p><strong>Due Date: </strong> 
               {assignment?.dueDate?.toDate().toLocaleDateString()}
             </p>
           </>
