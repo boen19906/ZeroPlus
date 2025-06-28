@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { doc, updateDoc, Timestamp, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -37,9 +37,19 @@ interface AttachedFile {
 
 const CreateDraft: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
+  
+  // Function to get default due date (today at 11:59 PM)
+  const getDefaultDueDate = (): string => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}T23:59`;
+  };
+
   const [formData, setFormData] = useState({
     name: '',
-    dueDate: '',
+    dueDate: getDefaultDueDate(),
     assignmentDescription: ''
   });
   const [loading, setLoading] = useState(false);
@@ -78,9 +88,20 @@ const CreateDraft: React.FC = () => {
   };
 
   const handleSaveQuiz = (quiz: QuizQuestion[]) => {
-    setQuizData(quiz);
+    console.log('Saving quiz with questions:', quiz); // Debug log
+    setQuizData([...quiz]); // Create a new array to ensure state update
     setQuizSaved(true);
-    setShowQuiz(false); // Hide quiz manager after saving
+    setShowQuiz(false);
+  };
+
+  const handleEditQuiz = () => {
+    console.log('Editing quiz, current quizData:', quizData); // Debug log
+    setShowQuiz(true);
+  };
+
+  const handleCancelQuiz = () => {
+    setShowQuiz(false);
+    // Don't reset quizData or quizSaved when canceling - keep existing quiz
   };
 
   const handleAttachFile = () => {
@@ -206,7 +227,11 @@ const CreateDraft: React.FC = () => {
       await updateDoc(courseRef, { homework: updatedHomework });
 
       setSuccess(true);
-      setFormData({ name: '', dueDate: '', assignmentDescription: '' });
+      setFormData({ 
+        name: '', 
+        dueDate: getDefaultDueDate(), // Reset to default due date
+        assignmentDescription: '' 
+      });
       setQuizData([]);
       setQuizSaved(false);
       setAttachedFiles([]);
@@ -268,15 +293,22 @@ const CreateDraft: React.FC = () => {
             
             {showQuiz && (
               <QuizManager 
+                initialQuizData={quizData} // Pass existing quiz data when editing
                 onSaveQuiz={handleSaveQuiz}
-                onCancel={() => setShowQuiz(false)}
+                onCancel={handleCancelQuiz}
               />
             )}
             
-            {quizSaved && (
+            {quizSaved && !showQuiz && (
               <div className="quiz-status">
                 <p>Quiz with {quizData.length} questions saved ✓</p>
-                <button type="button" onClick={() => setShowQuiz(true)}>Edit Quiz</button>
+                <button 
+                  type="button"
+                  className="edit-quiz-button" 
+                  onClick={handleEditQuiz}
+                >
+                  Edit Quiz
+                </button>
               </div>
             )}
           </div>
@@ -310,7 +342,7 @@ const CreateDraft: React.FC = () => {
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                <span>{uploadingFile ? 'Uploading...' : 'Attach File'}</span>
+                <span>{uploadingFile ? 'Uploading...' : 'Attach Guide File'}</span>
               </div>
             </button>
             

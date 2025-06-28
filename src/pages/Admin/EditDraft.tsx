@@ -119,6 +119,11 @@ const EditDraft: React.FC<EditDraftProps> = ({ courseId, isEdit, homeworkId }) =
     setShowQuiz(false); // Hide quiz manager after saving
   };
 
+  // Handle quiz cancellation
+  const handleCancelQuiz = () => {
+    setShowQuiz(false);
+  };
+
   // Toggle quiz editor visibility
   const toggleQuizEditor = () => {
     setShowQuiz(!showQuiz);
@@ -270,19 +275,11 @@ const EditDraft: React.FC<EditDraftProps> = ({ courseId, isEdit, homeworkId }) =
             )}
             
             {showQuiz && (
-              <>
-                <QuizManager 
-                  onSaveQuiz={handleSaveQuiz}
-                  initialQuizData={quizData}
-                />
-                <button 
-                  type="button" 
-                  className="cancel-button" 
-                  onClick={() => setShowQuiz(false)}
-                >
-                  Cancel
-                </button>
-              </>
+              <QuizManager 
+                onSaveQuiz={handleSaveQuiz}
+                onCancel={handleCancelQuiz}
+                initialQuizData={quizData}
+              />
             )}
           </div>
 

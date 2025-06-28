@@ -252,7 +252,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({ onSaveQuiz, onCancel, initial
   return (
     <div className="quiz-manager">
       <h2>{initialQuizData && initialQuizData.length > 0 ? 'Edit Quiz' : 'Create Quiz'}</h2>
-      <div className="error-message">{error}</div>
+      {error && <div className="error-message">{error}</div>}
       
       {questions.map((question, qIndex) => (
         <div key={question.id} className="question-editor">
