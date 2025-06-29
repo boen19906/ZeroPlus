@@ -1,4 +1,3 @@
-import { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import "./Course.css";
 import useScrollToTop from "../../hooks/useScroll";

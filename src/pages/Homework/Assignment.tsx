@@ -7,7 +7,6 @@ import './Assignment.css';
 import { useAdmin } from '../../hooks/useAdmin';
 import Homework from './Homework';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import CreateDraft from '../Admin/CreateDraft';
 import EditDraft from '../Admin/EditDraft';
 import { File, Download, RefreshCw } from 'lucide-react';
 

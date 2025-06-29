@@ -23,41 +23,40 @@ const SignIn = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-     // Manual validation
-     if (formData.email=="" || formData.password=="") {
+    
+    // Manual validation 
+    if (formData.email=="" || formData.password=="") {
       setError("All fields must be filled out.");
       return;
     }
 
     try {
       // Step 1: Sign in the user with Firebase Authentication
-      const userCredential = await signInWithEmailAndPassword(
+      await signInWithEmailAndPassword(
         auth,
         formData.email,
         formData.password
       );
-      const user = userCredential.user;
 
       // Step 2: Redirect to home page or dashboard
       navigate("/");
     } catch (error) {
       if (error instanceof Error) {
         const errorCode = (error as any).code;
-    
+        
         if (errorCode === "auth/invalid-credential") {
           setError("Incorrect Email or Password.");
         } else {
           setError(error.message);
         }
-    
+        
         console.error("Error signing in:", error);
       } else {
         setError("An unknown error occurred.");
         console.error("Unknown error:", error);
       }
     }
-    
+        
     console.log('Signup form submitted:', formData);
   };
 
@@ -96,7 +95,7 @@ const SignIn = () => {
       </form>
     </div>
   );
-  
+
 };
 
-export default SignIn; 
+export default SignIn;
